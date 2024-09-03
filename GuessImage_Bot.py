@@ -7,6 +7,9 @@ TESTCONNECTION = False
 
 botToken = getBotToken()
 dbToken = getDBToken()
+if (not botToken or not dbToken):
+    print(f'Cannot read ENV vars: botToken={botToken} | dbToken={dbToken}')
+    exit()
 bot = telebot.TeleBot(botToken)
 Connection.initConnection(dbToken, test=TESTCONNECTION)
 
