@@ -1,13 +1,27 @@
-from os import environ
+from os import path
+from os import getenv, environ
+from dotenv import load_dotenv
 import re
 import csv
-from os import path
+
 
 DEBUG = False
 EXT = '.jpg'
 BASE_URL = 'https://functions.yandexcloud.net/d4ei6a2doh55olhcagsm/'
 
 CREATORS_FILE_CVS = 'creators.csv'
+ENV_DBTOKEN ='DBTOKEN'
+ENV_BOTTOKEN ='BOTTOKEN'
+
+def getDBToken():
+    load_dotenv()
+    token = getenv(ENV_DBTOKEN)
+    return token
+
+def getBotToken():
+    load_dotenv()
+    token = getenv(ENV_BOTTOKEN)
+    return token
 
 def readCSV(fileName):
     data = []
