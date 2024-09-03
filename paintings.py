@@ -32,14 +32,6 @@ def main():
     #print(gameUnfinishedId)
 
     #Connection.clearAllCurrentGames()
-            
-    #query = 'select current_game from users where id=%(uId)s'
-    #ret = Connection.executeQuery(query, {'uId':1})
-    #print(ret)
-
-    #query = f"SELECT id FROM users WHERE name = %(name)s"
-    #ret = Connection.executeQuery(query,{'name':'Neo'})
-    #print(ret)
 
     #Connection.updateCreatorsFromCSV()
 

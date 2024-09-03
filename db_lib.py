@@ -42,6 +42,8 @@ def dbLibCheckUserId(user_id):
 
 # Check user name (can be string with '[a-zA-Z][0-9a-zA-Z]')
 def dbLibCheckUserName(user_name):
+    if (user_name == None):
+        return False
     return checkUserNameFormat(user_name)
 
 # Check game id (can be string or int with positive integer value)

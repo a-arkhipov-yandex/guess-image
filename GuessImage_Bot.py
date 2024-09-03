@@ -91,7 +91,7 @@ def startNewGame(message: types.Message):
     if (not dbLibCheckUserName(userName)):
         bot.send_message(
             message.from_user.id,
-            text=f'Неверный формат имени пользователя {userName} - простите, но у вас не получится поиграть.'
+            text=f'Неверный формат имени пользователя {userName} - простите, но у вас не получится поиграть. Попробуйте позже.'
         )
         return
     check = ibotIsUserExist(userName)
