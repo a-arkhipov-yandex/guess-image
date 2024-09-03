@@ -214,22 +214,22 @@ class Connection:
             if (not isWeb()): # Connection via internet
                 if (test):
                     conn = psycopg2.connect("""
-                        host=rc1b-fdrelru32ywy97o5.mdb.yandexcloud.net
+                        host=
                         port=6432
                         sslmode=verify-full
-                        dbname=db1
-                        user=user1
-                        password=123qweasd
+                        dbname=
+                        user=
+                        password=
                         target_session_attrs=read-write
                     """)
                 else: # Production
                     conn = psycopg2.connect("""
-                        host=rc1b-qgx6lvjwro46n9kq.mdb.yandexcloud.net
+                        host=
                         port=6432
                         sslmode=verify-full
-                        dbname=db1
-                        user=user1
-                        password=123qweasd
+                        dbname=
+                        user=
+                        password=
                         target_session_attrs=read-write
                     """)
             else: # Connection from inside cloud function

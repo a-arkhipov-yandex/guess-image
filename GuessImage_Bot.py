@@ -5,7 +5,7 @@ from gibot_lib import *
 
 TESTCONNECTION = True
 
-bot = telebot.TeleBot('7041783168:AAGFlFqrhLfTVF15QpnAz9_8R83FnExvTeA')
+bot = telebot.TeleBot('')
 Connection.initConnection(test=TESTCONNECTION)
 
 # Message handler
