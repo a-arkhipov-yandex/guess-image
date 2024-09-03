@@ -40,7 +40,7 @@ def settingsHandler(message: types.Message):
 def settings(message: types.Message):
     ibotRequestComplexity(bot, message)
 
-@bot.callback_query_handler(func=lambda message: re.match(f'^{IBOT_COMPLEXITY_ANSWER}\d+$', message.data))
+@bot.callback_query_handler(func=lambda message: re.match(f'^{IBOT_COMPLEXITY_ANSWER}'+'\d+$', message.data))
 def complexityHanderl(message: types.Message):
     # Check user name format first
     if (not ibotCheckUserName(bot, message)):
@@ -59,7 +59,7 @@ def complexityHanderl(message: types.Message):
     # Request Game Type setting
     ibotRequestGameType(bot, message)
 
-@bot.callback_query_handler(func=lambda message: re.match(f'^{IBOT_GAMETYPE_ANSWER}\d+$', message.data))
+@bot.callback_query_handler(func=lambda message: re.match(f'^{IBOT_GAMETYPE_ANSWER}'+'\d+$', message.data))
 def gameTypeHanderl(message: types.Message):
     # Check user name format first
     if (not ibotCheckUserName(bot, message)):
@@ -117,7 +117,7 @@ def startNewGame(message: types.Message):
     gameId = guess_image.generateNewGame(params)
     ibotShowQuestion(bot, message, gameType, gameId)
 
-@bot.callback_query_handler(func=lambda message: re.match(f'^{IBOT_TYPE2_ANSWER}\d+$', message.data))
+@bot.callback_query_handler(func=lambda message: re.match(f'^{IBOT_TYPE2_ANSWER}'+'\d+$', message.data))
 def gameType2AnswerHanderl(message: types.Message):
     userName = message.from_user.username
     # Check user name format first
@@ -141,7 +141,7 @@ def gameType2AnswerHanderl(message: types.Message):
     correctMessage = f'Эту картину написал {correctAnswer}.'
     ibotShowGameResult(bot, message, result, correctAnswer, correctMessage)
 
-@bot.callback_query_handler(func=lambda message: re.match(f'^{IBOT_TYPE1_ANSWER}\d+$', message.data))
+@bot.callback_query_handler(func=lambda message: re.match(f'^{IBOT_TYPE1_ANSWER}'+'\d+$', message.data))
 def gameType1AnswerHanderl(message: types.Message):
     userName = message.from_user.username
     # Check user name format first
