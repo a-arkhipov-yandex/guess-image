@@ -3,10 +3,12 @@ from db_lib import *
 from game_lib import *
 from gibot_lib import *
 
-TESTCONNECTION = True
+TESTCONNECTION = False
 
-bot = telebot.TeleBot('')
-Connection.initConnection(test=TESTCONNECTION)
+botToken = getBotToken()
+dbToken = getDBToken()
+bot = telebot.TeleBot(botToken)
+Connection.initConnection(dbToken, test=TESTCONNECTION)
 
 # Message handler
 @bot.message_handler(content_types=['text'])

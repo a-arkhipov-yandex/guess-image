@@ -25,11 +25,15 @@ def main():
     #bulkUpload(creators, titles, years)
 
     #Connection.initConnection(test=False)
-    Connection.initConnection(test=True)
+    token = getDBToken()
+    if (not token):
+        print(f'ERROR: cannot get token fron env DBTOKEN')
+        return
+    Connection.initConnection(token=token, test=True)
     #gameUnfinishedId = Connection.getGameInfoById(153)
     #print(gameUnfinishedId)
 
-    Connection.clearAllCurrentGames()
+    #Connection.clearAllCurrentGames()
             
     #query = 'select current_game from users where id=%(uId)s'
     #ret = Connection.executeQuery(query, {'uId':1})
