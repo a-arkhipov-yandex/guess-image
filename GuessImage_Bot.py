@@ -126,7 +126,7 @@ def gameType2AnswerHanderl(message: types.Message):
     creatorId = int(message.data.split(':')[1])
     # Get current game
     gameId = Connection.getCurrentGame(userName)
-    if (dbNotFound(gameId)):
+    if (not gameId):
         bot.send_message(message.from_user.id, text='Нет запущенных игр. Введите "/start" чтобы начать новую.')
         return
     # Finish game and return result
@@ -151,7 +151,7 @@ def gameType1AnswerHanderl(message: types.Message):
     imageId = int(message.data.split(':')[1])
     # Get current game
     gameId = Connection.getCurrentGame(userName)
-    if (dbNotFound(gameId)):
+    if (not gameId):
         bot.send_message(message.from_user.id, text='Нет запущенных игр. Введите "/start" чтобы начать новую.')
         return
     # Finish game and return result
