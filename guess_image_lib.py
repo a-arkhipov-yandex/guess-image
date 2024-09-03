@@ -10,18 +10,49 @@ EXT = '.jpg'
 BASE_URL = 'https://functions.yandexcloud.net/d4ei6a2doh55olhcagsm/'
 
 CREATORS_FILE_CVS = 'creators.csv'
+ENV_DBHOST = 'DBHOST'
+ENV_DBPORT = 'DBPORT'
+ENV_DBNAME = 'DBNAME'
+ENV_DBUSER = 'DBUSER'
 ENV_DBTOKEN ='DBTOKEN'
-ENV_BOTTOKEN ='BOTTOKEN'
+ENV_DBTESTHOST = 'DBTESTHOST'
+ENV_DBTESTPORT = 'DBTESTPORT'
+ENV_DBTESTNAME = 'DBTESTNAME'
+ENV_DBTESTUSER = 'DBTESTUSER'
+ENV_DBTESTTOKEN ='DBTESTTOKEN'
 
-def getDBToken():
-    load_dotenv()
-    token = getenv(ENV_DBTOKEN)
-    return token
+ENV_BOTTOKEN ='BOTTOKEN'
 
 def getBotToken():
     load_dotenv()
     token = getenv(ENV_BOTTOKEN)
     return token
+
+def getDBbConnectionData():
+    load_dotenv()
+    data={}
+    data['dbhost']=getenv(ENV_DBHOST)
+    data['dbport']=getenv(ENV_DBPORT)
+    data['dbname']=getenv(ENV_DBNAME)
+    data['dbuser']=getenv(ENV_DBUSER)
+    data['dbtoken']=getenv(ENV_DBTOKEN)
+    for v in data.values():
+        if (v == None): # Something wrong
+            return None
+    return data
+
+def getDBbTestConnectionData():
+    load_dotenv()
+    data={}
+    data['dbhost']=getenv(ENV_DBTESTHOST)
+    data['dbport']=getenv(ENV_DBTESTPORT)
+    data['dbname']=getenv(ENV_DBTESTNAME)
+    data['dbuser']=getenv(ENV_DBTESTUSER)
+    data['dbtoken']=getenv(ENV_DBTESTTOKEN)
+    for v in data.values():
+        if (v == None): # Something wrong
+            return None
+    return data
 
 def readCSV(fileName):
     data = []

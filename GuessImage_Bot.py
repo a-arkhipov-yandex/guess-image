@@ -6,12 +6,11 @@ from gibot_lib import *
 TESTCONNECTION = False
 
 botToken = getBotToken()
-dbToken = getDBToken()
-if (not botToken or not dbToken):
-    print(f'Cannot read ENV vars: botToken={botToken} | dbToken={dbToken}')
+if (not botToken):
+    print(f'Cannot read ENV vars: botToken={botToken}')
     exit()
 bot = telebot.TeleBot(botToken)
-Connection.initConnection(dbToken, test=TESTCONNECTION)
+Connection.initConnection(test=TESTCONNECTION)
 
 # Message handler
 @bot.message_handler(content_types=['text'])

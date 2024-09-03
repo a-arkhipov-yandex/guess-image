@@ -181,7 +181,9 @@ class Connection:
     DEFAULT_COMPLEXITY_KEY = 'default_complexity'
     NOT_FOUND = "!!!NOT_FOUND!!!"
 
+    # Init connection - returns True/False
     def initConnection(token=None, test=False):
+        ret = False
         if (not Connection.__isInitialized):
             Connection.__connection = Connection.__newConnection(token, test)
             if (Connection.isInitialized()):
@@ -192,10 +194,12 @@ class Connection:
                 Connection.__gameTypes = Connection.getGameTypesFromDb()
                 Connection.__complexities = Connection.getComplexitiesFromDb()
                 debug(f"DB Connection created")
+                ret = True
             else:
                 print(f'Error: Cannot initialize connection to DB')
         else:
                 print(f'WARNING: Trying to initialize connection that already initialized')
+        return ret
     
     def getConnection():
         if (not Connection.isInitialized()):
@@ -208,30 +212,27 @@ class Connection:
             Connection.__isInitialized = False
             print(f"DB Connection closed")
 
-    def __newConnection(token, test=False):
+    def __newConnection(token=None, test=False):
         conn = None
         try:
             if (not isWeb()): # Connection via internet
                 if (test):
-                    conn = psycopg2.connect("""
-                        host=
-                        port=6432
-                        sslmode=verify-full
-                        dbname=
-                        user=
-                        password=
-                        target_session_attrs=read-write
-                    """)
+                    data = getDBbTestConnectionData()
                 else: # Production
-                    conn = psycopg2.connect("""
-                        host=
-                        port=6432
-                        sslmode=verify-full
-                        dbname=
-                        user=
-                        password=
-                        target_session_attrs=read-write
-                    """)
+                    data = getDBbConnectionData()
+                if (data == None):
+                    print(f'ERROR: Cannot get env data. Exiting.')
+                    return
+
+                conn = psycopg2.connect(f"""
+                    host={data['dbhost']}
+                    port={data['dbport']}
+                    sslmode=verify-full
+                    dbname={data['dbname']}
+                    user={data['dbuser']}
+                    password={data['dbtoken']}
+                    target_session_attrs=read-write
+                """)
             else: # Connection from inside cloud function
                 if (test):
                     conn = psycopg2.connect(

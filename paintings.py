@@ -25,11 +25,9 @@ def main():
     #bulkUpload(creators, titles, years)
 
     #Connection.initConnection(test=False)
-    token = getDBToken()
-    if (not token):
-        print(f'ERROR: cannot get token fron env DBTOKEN')
-        return
-    Connection.initConnection(token=token, test=True)
+    if (not Connection.initConnection(test=True)):
+        print('ERROR: Cannot init connection')
+        exit()
     #gameUnfinishedId = Connection.getGameInfoById(153)
     #print(gameUnfinishedId)
 
