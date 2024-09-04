@@ -180,7 +180,7 @@ def ibotShowQuestionType2(bot,message, gameId):
     bot.send_photo(message.from_user.id, url)
     # Show buttons with answer options
     keyboard = types.InlineKeyboardMarkup()
-    for i in range(1, CREATORS_IN_TYPE2_ANSWER+1):
+    for i in range(0, len(creators)): # 2 because we start with 1 + correct creator
         creatorId = creators[i].get('creatorId')
         creatorName = creators[i].get('creatorName')
         data = f'{IBOT_TYPE2_ANSWER}{creatorId}'

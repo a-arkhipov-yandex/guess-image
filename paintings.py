@@ -25,7 +25,7 @@ def main():
     #bulkUpload(creators, titles, years)
 
     #Connection.initConnection(test=False)
-    if (not Connection.initConnection(test=True)):
+    if (not Connection.initConnection(test=False)):
         print('ERROR: Cannot init connection')
         exit()
     #gameUnfinishedId = Connection.getGameInfoById(153)
@@ -33,9 +33,9 @@ def main():
 
     #Connection.clearAllCurrentGames()
 
-    #Connection.updateCreatorsFromCSV()
+    Connection.updateCreatorsFromCSV()
 
-    #Connection.updateDB(creators, titles, years, intYears, orientations)
+    Connection.updateDB(creators, titles, years, intYears, orientations)
 
     #print(Connection.getCreatorIdByName('Винсент Ван Гог'))
     #html = showNImages(4)

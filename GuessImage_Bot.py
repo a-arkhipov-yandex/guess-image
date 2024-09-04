@@ -54,7 +54,7 @@ def complexityHanderl(message: types.Message):
     # Set complexity for the user
     ret = Connection.updateUserComplexity(userName, complexity)
     if (not ret):
-        bot.send_message(message.from_user.id, 'Cannot update complexity. Please try again later.')
+        bot.send_message(message.from_user.id, 'Произошла ошибка. Попробуйте позже.')
         return
     # Request Game Type setting
     ibotRequestGameType(bot, message)
