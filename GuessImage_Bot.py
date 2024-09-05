@@ -3,9 +3,10 @@ from db_lib import *
 from game_lib import *
 from gibot_lib import *
 
-TESTCONNECTION = False
+TESTCONNECTION = True
+TESTBOT = True
 
-botToken = getBotToken()
+botToken = getBotToken(TESTBOT)
 if (not botToken):
     print(f'Cannot read ENV vars: botToken={botToken}')
     exit()
@@ -16,6 +17,12 @@ Connection.initConnection(test=TESTCONNECTION)
 @bot.message_handler(content_types=['text'])
 def get_text_messages(message):
     #bot.send_message(message.from_user.id, f'{message.from_user.username}')
+    # Check if there is cmd
+    if (message.text[0] == '/'):
+        return cmdHandler(message)
+    bot.send_message(message.from_user.id, 'Неизваестный текст')
+
+def cmdHandler(message):
     if message.text == "/start":
         ret = startHandler(message)
         #bot.send_message(message.from_user.id, ret)
@@ -129,6 +136,7 @@ def gameType2AnswerHanderl(message: types.Message):
     if (not gameId):
         bot.send_message(message.from_user.id, text='Нет запущенных игр. Введите "/start" чтобы начать новую.')
         return
+
     # Finish game and return result
     guess_image.finishGame(userName, gameId, creatorId)
     # Get game info
@@ -154,6 +162,23 @@ def gameType1AnswerHanderl(message: types.Message):
     if (not gameId):
         bot.send_message(message.from_user.id, text='Нет запущенных игр. Введите "/start" чтобы начать новую.')
         return
+    # Get question info
+    gameInfo = Connection.getGameInfoById(gameId)
+    answerOptions = guess_image.getQuestionType1Options(gameInfo)
+    correctAnswerNum = None
+    if (answerOptions):
+        correctAnswerNum = ibotFindNumOfType1Answer(answerOptions, gameInfo['correct_answer'])
+    imageIds = guess_image.getQuestionType1Options(gameInfo)
+    if (not imageIds):
+        print(f'ERROR: {ibotShowQuestionType1.__name__}: wrong format of imageIds = {imageIds}')
+        bot.send_message(message.from_user.id, "Произошла ошибка. Пожалуйста начните новую игру")
+        return
+
+    # Get image messages ids
+    mIdsTxt = Connection.getCurrentGameData(userName)
+    mIds = guess_image.getMessageIds(mIdsTxt)
+    ibotModifyImageCaptures(bot, message, mIds, imageIds)
+
     # Finish game and return result
     guess_image.finishGame(userName, gameId, imageId)
     # Get game info
@@ -163,16 +188,20 @@ def gameType1AnswerHanderl(message: types.Message):
     correctAnswerId = gameInfo.get('correct_answer')
     correctAnswer = Connection.getImageInfoById(correctAnswerId).get('imageName')
     correctMessage = f'Это картина "{correctAnswer}"'
-    ibotShowGameResult(bot, message, result, correctAnswer, correctMessage)
+    ibotShowGameResult(bot, message, result, correctAnswer, correctMessage, correctAnswerNum)
 
 # Show game result
-def ibotShowGameResult(bot, message, result, correctAnswer, correctMessage=''):
+def ibotShowGameResult(bot, message, result, correctAnswer, correctMessage='', correctAnswerNum=None):
     # Check result
     if (result):
         # Answer is correct
         bot.send_message(message.from_user.id, text=f'Поздравляю! Вы ответили верно. {correctMessage}')
     else:
-        bot.send_message(message.from_user.id, text=f'А вот и не верно. Верный ответ: "{correctAnswer}"')
+        correctAnswerTxt = ''
+        if (correctAnswerNum):
+            correctAnswerTxt = f' под номером {correctAnswerNum}'
+
+        bot.send_message(message.from_user.id, text=f'А вот и не верно. Верный ответ{correctAnswerTxt}: "{correctAnswer}"')
     key1 = types.InlineKeyboardButton(text='Сыграть еще раз', callback_data=f'/start')
     key2= types.InlineKeyboardButton(text='Выбрать другой тип игры/сложность', callback_data=f'/settings')
     keyboard = types.InlineKeyboardMarkup(); # keyboard

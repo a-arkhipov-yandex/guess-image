@@ -1027,13 +1027,14 @@ class Connection:
     # id - current game id
     # None - no current game
     def getCurrentGame(userName):
+        fName = Connection.getCurrentGame.__name__
         ret = dbLibCheckUserName(userName)
         if (not ret):
-            print(f'ERROR: getCurrentGame: Incorrect user {userName} provided')
+            print(f'ERROR: {fName}: Incorrect user {userName} provided')
             return None
         userId = Connection.getUserIdByName(userName)
         if (dbNotFound(userId)):
-            print(f'ERROR: getCurrentGame: Cannot find user {userName}')
+            print(f'ERROR: {fName}: Cannot find user {userName}')
             return None
         ret = None
         query = 'select current_game from users where id=%(uId)s'
@@ -1042,7 +1043,7 @@ class Connection:
             currentGame = currentGame[0]
             if (currentGame):
                 # Check that game is not finished
-                ret2 = Connection.checkGameIsFinished(ret)
+                ret2 = Connection.checkGameIsFinished(currentGame)
                 if (not ret2): # UnFinished game
                     ret = currentGame
         return ret
@@ -1057,30 +1058,31 @@ class Connection:
     # Update current_game for the userId
     # Returns: True - update successful / False - otherwise
     def updateCurrentGame(userName, gameId):
+        fName = Connection.updateCurrentGame.__name__
         if (not Connection.isInitialized()):
-            print("ERROR: updateCurrentGame: connection is not initialized")
+            print(f"ERROR: {fName}: connection is not initialized")
             return False
         ret = dbLibCheckUserName(userName)
         if (not ret):
-            print(f'ERROR: updateCurrentGame: Incorrect user {userName} provided')
+            print(f'ERROR: {fName}: Incorrect user {userName} provided')
             return False
         userId = Connection.getUserIdByName(userName)
         if (dbNotFound(userId)):
-            print(f'ERROR: updateCurrentGame: Cannot find user {userName}')
+            print(f'ERROR: {fName}: Cannot find user {userName}')
             return False
         if (gameId):
             gameInfo = Connection.getGameInfoById(gameId)
             if (dbNotFound(gameInfo)):
-                print(f'ERROR: updateCurrentGame: cannot find game {gameId} (user={userName})')
+                print(f'ERROR: {fName}: cannot find game {gameId} (user={userName})')
                 return False
             # Check userId is correct
             if (gameInfo['user'] != userId):
-                print(f'ERROR: updateCurrentGame: game {gameId} doesnt belong to user {userName} ({userId})')
+                print(f'ERROR: {fName}: game {gameId} doesnt belong to user {userName} ({userId})')
                 return False
             # Check that game is finished
             ret = dbLibCheckIfGameFinished(gameInfo)
             if (ret):
-                print(f'ERROR: updateCurrentGame: cannot set finished game as current (gameId = {gameId}, user={userName})')
+                print(f'ERROR: {fName}: cannot set finished game as current (gameId = {gameId}, user={userName})')
                 return False
         ret = False
         conn = Connection.getConnection()
@@ -1091,7 +1093,63 @@ class Connection:
                 print(f'Updated current game: (gameId = {gameId}, user={userName})')
                 ret = True
             except (Exception, psycopg2.DatabaseError) as error:
-                print(f'ERROR: Failed update current game (gameId = {gameId}, user={userName}): {error}')
+                print(f'ERROR: {fName}: Failed update current game (gameId = {gameId}, user={userName}): {error}')
+        return ret
+
+    # Get current game data for user userName
+    # Returns:
+    # id - current game id
+    # None - no current game
+    def getCurrentGameData(userName):
+        fName = Connection.getCurrentGameData.__name__
+        ret = dbLibCheckUserName(userName)
+        if (not ret):
+            print(f'ERROR: {fName}: Incorrect user {userName} provided')
+            return None
+        userId = Connection.getUserIdByName(userName)
+        if (dbNotFound(userId)):
+            print(f'ERROR: {fName}: Cannot find user {userName}')
+            return None
+        ret = None
+        query = 'select game_data from users where id=%(uId)s'
+        currentGameData = Connection.executeQuery(query, {'uId':userId})
+        if (dbFound(currentGameData)):
+            currentGameData = currentGameData[0]
+            if (currentGameData):
+                ret = currentGameData
+        return ret
+
+    def setCurrentGameData(userName, gameData):
+        return Connection.updateCurrentGameData(userName, gameData)
+
+    def clearCurrentGameData(userName):
+        return Connection.updateCurrentGameData(userName, None)
+
+    # Update game_data for the userId
+    # Returns: True - update successful / False - otherwise
+    def updateCurrentGameData(userName, gameData):
+        fName = Connection.updateCurrentGameData.__name__
+        if (not Connection.isInitialized()):
+            print(f"ERROR: {fName}: connection is not initialized")
+            return False
+        ret = dbLibCheckUserName(userName)
+        if (not ret):
+            print(f'ERROR: {fName}: Incorrect user {userName} provided')
+            return False
+        userId = Connection.getUserIdByName(userName)
+        if (dbNotFound(userId)):
+            print(f'ERROR: {fName}: Cannot find user {userName}')
+            return False
+        ret = False
+        conn = Connection.getConnection()
+        with conn.cursor() as cur:
+            query = 'update users set game_data=%(gd)s where id = %(uId)s'
+            try:
+                cur.execute(query,{'gd':gameData,'uId':userId})
+                print(f'Updated current game data: (gameData = {gameData}, user={userName})')
+                ret = True
+            except (Exception, psycopg2.DatabaseError) as error:
+                print(f'ERROR: {fName}: Failed update current game data (gameData = {gameData}, user={userName}): {error}')
         return ret
 
     # Get user game type

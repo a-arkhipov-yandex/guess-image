@@ -22,10 +22,14 @@ ENV_DBTESTUSER = 'DBTESTUSER'
 ENV_DBTESTTOKEN ='DBTESTTOKEN'
 
 ENV_BOTTOKEN ='BOTTOKEN'
+ENV_BOTTOKENTEST ='BOTTOKENTEST'
 
-def getBotToken():
+def getBotToken(test):
     load_dotenv()
     token = getenv(ENV_BOTTOKEN)
+    if (test):
+        token = getenv(ENV_BOTTOKENTEST)
+
     return token
 
 def getDBbConnectionData():

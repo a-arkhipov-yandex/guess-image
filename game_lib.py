@@ -11,6 +11,8 @@ class guess_image:
     ANSWER_PAGE = 5
     NEW_USER_PAGE = 6
 
+    GAME2NUMBEROFOPTIONS = 3
+
     # Analize params and understand which page to show next
     def getPageToShow(queryParams):
         user = queryParams.get('user')
@@ -127,6 +129,31 @@ class guess_image:
             print(f'ERROR: generateNewGame: unknown game type {game_type}')
         return ret
 
+    # Extract game type 1 question options
+    # Returns:
+    #   [id1, ...] - GAME2NUMBEROFOPTIONS image ids
+    #   None - if any error
+    def getQuestionType1Options(gameInfo):
+        imageIds = []
+        question = gameInfo['question']
+        for item in question.split(' '):
+            imageIds.append(int(item))
+        if (len(imageIds) != guess_image.GAME2NUMBEROFOPTIONS + 1): # +1 correct answer
+            return None
+        return imageIds
+
+    # Extract message ids for images
+    # Returns:
+    #   [id1, ...] - GAME2NUMBEROFOPTIONS message ids
+    #   None - if any error
+    def getMessageIds(mIdsTxt):
+        mIds = []
+        for item in mIdsTxt.split(' '):
+            mIds.append(int(item))
+        if (len(mIds) != guess_image.GAME2NUMBEROFOPTIONS + 1): # +1 correct answer
+            return None
+        return mIds
+
     # Generate new game with type 1: guess image of the creator
     # Returns:
     #   None - is any error
@@ -152,9 +179,9 @@ class guess_image:
             return None
         imageId = ret[0]
         # Get 3 random images where creator is not the same
-        otherImageIds = Connection.getRandomImageIdsOfOtherCreators(creatorId, complexity, 3)
-        if (dbNotFound(otherImageIds) or len(otherImageIds) != 3):
-            print(f'ERROR: generateNewGame1: Cannot get random 3 images of creator other than {creatorId}')
+        otherImageIds = Connection.getRandomImageIdsOfOtherCreators(creatorId, complexity, guess_image.GAME2NUMBEROFOPTIONS)
+        if (dbNotFound(otherImageIds) or len(otherImageIds) != guess_image.GAME2NUMBEROFOPTIONS):
+            print(f'ERROR: generateNewGame1: Cannot get random {guess_image.GAME2NUMBEROFOPTIONS} images of creator other than {creatorId}')
             return None
         userName = queryParams['user']
         userId = Connection.getUserIdByName(userName)
@@ -166,6 +193,8 @@ class guess_image:
         for i in otherImageIds:
             questionIds.append(i[0]) # it is array of arrays
         questionIds.append(imageId)
+        # Shuffle it
+        shuffle(questionIds)
         question = " ".join(str(i) for i in questionIds)
         # Generate game with user, type(1), correct_answer (correct_image_id), question(image ids)
         ret = Connection.insertGame(userId, gameType, imageId, question, complexity)
@@ -298,7 +327,9 @@ class guess_image:
         if (not ret):
             return False
         # Clear current game
-        return Connection.clearCurrentGame(userName)
+        Connection.clearCurrentGame(userName)
+        Connection.clearCurrentGameData(userName)
+        return True
 
     # Check answer and return question page
     def pageAnswer(queryParams):

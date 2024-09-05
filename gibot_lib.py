@@ -123,6 +123,18 @@ def ibotShowQuestion(bot,message,type,gameId):
     else:
         ibotShowQuestionType2(bot,message, gameId)
 
+# Find number of correct answer in type 1 question
+# Returns:
+#   i - num of correct answer starting from 1
+#   None - if any issues
+def ibotFindNumOfType1Answer(imageIds, correctId):
+    ret = None
+    for i in range(0, len(imageIds)):
+        if (imageIds[i] == correctId):
+            ret = i + 1
+            break
+    return ret
+
 def ibotShowQuestionType1(bot,message, gameId):
     # Get gameInfo
     gameInfo = Connection.getGameInfoById(gameId)
@@ -131,12 +143,12 @@ def ibotShowQuestionType1(bot,message, gameId):
         # TODO: show finished info
         bot.send_message(message.from_user.id, text='Извините, но игра уже завершена. Введите "/start" чтобы начать новую.')
         return
-    imageIds = []
-    question = gameInfo['question']
-    for item in question.split(' '):
-        imageIds.append(int(item))
+    imageIds = guess_image.getQuestionType1Options(gameInfo)
+    if (not imageIds):
+        print(f'ERROR: {ibotShowQuestionType1.__name__}: wrong format of imageIds = {imageIds}')
+        bot.send_message(message.from_user.id, "Произошла ошибка. Пожалуйста начните новую игру")
+        return
     data = []
-    shuffle(imageIds)
     # Get image URLs
     for id in imageIds:
         url = Connection.getImageUrlById(id)
@@ -148,7 +160,13 @@ def ibotShowQuestionType1(bot,message, gameId):
     media_group = []
     for d in data:
         media_group.append(types.InputMediaPhoto(show_caption_above_media=True, media=d['url']))
-    bot.send_media_group(message.from_user.id, media=media_group)
+    ret = bot.send_media_group(message.from_user.id, media=media_group)
+    mIds = []
+    for m in ret:
+        mIds.append(m.id)
+    mIdsTxt = " ".join(str(i) for i in mIds)
+    # Save options in current game data
+    ret = Connection.setCurrentGameData(message.from_user.username, mIdsTxt)
     # Show buttons for answer
     keys = []
     for i in range(len(data)):
@@ -156,6 +174,24 @@ def ibotShowQuestionType1(bot,message, gameId):
         keys.append(types.InlineKeyboardButton(text=str(i+1), callback_data=responseData))
     keyboard = types.InlineKeyboardMarkup([keys])
     bot.send_message(message.from_user.id, text='Выберите вариант:', reply_markup=keyboard)
+
+# Modify captures of images with creator, name, year
+def ibotModifyImageCaptures(bot, message, mIds, imageIds):
+    if (len(mIds) != len(imageIds)):
+        print(f'ERROR: {ibotModifyImageCaptures.__name__}: len of mIds and imageIds doesnt match')
+        return
+    for i in range(0, len(mIds)):
+        ibotModifyImageCapture(bot, message, mIds[i], imageIds[i])
+
+def ibotModifyImageCapture(bot, message, messageId, imageId):
+    # Get image info
+    imageInfo = Connection.getImageInfoById(imageId)
+    if (dbFound(imageInfo)):
+        caption = f"{imageInfo['creatorName']} - {imageInfo['imageName']} - {imageInfo['yearStr']}"
+        # Edit image capture
+        bot.edit_message_caption(chat_id=message.from_user.id, message_id=messageId, caption=caption)
+    else:
+        print(f'ERROR: {ibotModifyImageCapture.__name__}: Cannot get image info for {imageId}')
 
 def ibotShowQuestionType2(bot,message, gameId):
     # Get gameInfo

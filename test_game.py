@@ -25,7 +25,11 @@ class TestGame:
         # Create unfinished game type 1
         params = {'user':TestGame.testUserName,'type':1, 'complexity':1}
         gameType1Id = guess_image.generateNewGame1(params)
+        currentGame = Connection.getCurrentGame(TestGame.testUserName)
+        gameData = Connection.getCurrentGameData(TestGame.testUserName)
         assert(gameType1Id)
+        assert(currentGame == gameType1Id)
+        assert(gameData != None)
         TestGame.unfinishedGameType1Id = gameType1Id
         # Create unfinished game type 2
         params = {'user':TestGame.testUserName,'type':2,'complexity':1}

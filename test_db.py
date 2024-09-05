@@ -530,6 +530,31 @@ class TestDB:
         assert(resClearCurrentGame == True)
         assert(gameUnfinishedId3 == None)
 
+    def testCurrentGameData(self):
+        userName2 = 'TestCurrentGameUser'
+        gameData = "data"
+        # Create user
+        Connection.insertUser(userName2)
+        userId2 = Connection.getUserIdByName(userName2)
+        # Generate new game and get id
+        gameUnfinishedId = Connection.insertGame(userId2,1,1,1,1)
+        resSetCurrentGameDataNonexistingUser = Connection.setCurrentGame('NonexistingUser',gameUnfinishedId)
+        resSetCurrentGameDataCorrect = Connection.setCurrentGameData(userName2, gameData)
+        gameUnfinishedDataCorrect = Connection.getCurrentGameData(userName2)
+        resClearCurrentGame = Connection.clearCurrentGameData(userName2)
+        gameUnfinishedData = Connection.getCurrentGameData(userName2)
+
+        # Delete games
+        Connection.deleteGame(gameUnfinishedId)
+        # Delete user
+        Connection.deleteUser(userId2)
+
+        assert(resSetCurrentGameDataNonexistingUser == False)
+        assert(resSetCurrentGameDataCorrect == True)
+        assert(gameUnfinishedDataCorrect == gameData)
+        assert(resClearCurrentGame == True)
+        assert(gameUnfinishedData == None)
+
     def testUserSettings(self):
         userNameCorrect = 'testUserSettings'
         userNameInCorrect = 'TestUserSettingsвава'
