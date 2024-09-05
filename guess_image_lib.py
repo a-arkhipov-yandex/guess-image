@@ -1,5 +1,6 @@
 from os import path
 from os import getenv, environ
+from Levenshtein import distance
 from dotenv import load_dotenv
 import re
 import csv
@@ -26,6 +27,15 @@ ENV_BOTTOKENTEST = 'BOTTOKENTEST'
 
 ENV_TESTDB = 'TESTDB'
 ENV_TESTBOT = 'TESTBOT'
+
+MIN_SIMILARITY = 3
+
+def isStrSimilar(str1,str2):
+    dist = getStrDistance(str1,str2)
+    return dist <= MIN_SIMILARITY
+
+def getStrDistance(str1, str2):
+    return distance(str1, str2)
 
 def isTestBot():
     load_dotenv()

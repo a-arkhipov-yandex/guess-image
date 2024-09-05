@@ -286,6 +286,10 @@ def ibotCheckAnswerGameType3(userCreatorName, correctCreatorName):
     userCreatorName = userCreatorName.replace('ё','е') # Replace 'ё'
     correctCreatorName = correctCreatorName.replace('ё','е') # Replace 'ё'
 
+    # 0. Full match
+    if (userCreatorName == correctCreatorName):
+        return True
+
     lU = len(userCreatorName)
     lC = len(correctCreatorName)
     # 2. Check length of userAnswer
@@ -293,9 +297,10 @@ def ibotCheckAnswerGameType3(userCreatorName, correctCreatorName):
         return False
     
     # 2. Check if it is long enough and match the end of the string (last name only)
+    correctName2 = correctCreatorName[-lU:]
+    if (userCreatorName == correctName2):
+        return True
 
-    lU = len(userCreatorName)
-    lC = len(correctCreatorName)
-
-    ret = ((userCreatorName in correctCreatorName) and (lU >= lC/2))
+    # Check Levenstein similarity
+    ret = isStrSimilar(userCreatorName, correctCreatorName)
     return ret

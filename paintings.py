@@ -5,6 +5,7 @@ from s3_lib import *
 from img_fs_lib import *
 from img_ui_lib import *
 from game_lib import *
+from Levenshtein import distance
 
 #===============
 # Main section
@@ -31,6 +32,13 @@ def main():
         exit()
     #gameUnfinishedId = Connection.getGameInfoById(153)
     #print(gameUnfinishedId)
+
+    string1 = "пабло пикассо"
+    string2 = "пабло пикасо"
+
+    l_dist = distance(string1, string2)
+
+    print("Levenshtein Distance between "+string1+" & "+string2+" is " + str(l_dist))
 
     #Connection.clearAllCurrentGames()
 

@@ -227,9 +227,13 @@ def gameType1AnswerHanderl(message: types.Message):
 # Show game result
 def ibotShowGameResult(bot, message, result, correctAnswer, correctMessage='', correctAnswerNum=None):
     # Check result
+    correctAnswerTxt = ''
+    if (correctAnswerNum):
+        correctAnswerTxt = f' под номером {correctAnswerNum}'
+
     if (result):
         # Answer is correct
-        bot.send_message(message.from_user.id, text=f'Поздравляю! Вы ответили верно. {correctMessage}')
+        bot.send_message(message.from_user.id, text=f'Поздравляю! Вы ответили верно. {correctMessage}{correctAnswerTxt}')
     else:
         correctAnswerTxt = ''
         if (correctAnswerNum):
