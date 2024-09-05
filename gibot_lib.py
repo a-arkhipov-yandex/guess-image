@@ -16,12 +16,13 @@ CMD_HELP = '/help'
 CMD_SETTINGS = '/settings'
 
 # Returns help message
-def ibotGetHelpMessage():
-    return '''
-        Команды GuessImage_Bot:
-        /help - вывести помощь по каомандам (это сообщение)
-        /start - начать новую игру с текущими настройками (может вызываться на любом шаге)
-        /settings - установить настройки типа игры и сложности
+def ibotGetHelpMessage(userName):
+    ret = ibotGetWelcomeMessage(userName)
+    return ret + '''
+Команды GuessImage_Bot:
+    /help - вывести помощь по каомандам (это сообщение)
+    /start - начать новую игру с текущими настройками (может вызываться на любом шаге)
+    /settings - установить настройки типа игры и сложности
     '''
     #    /menu - вызвать меню
     #    /game - продолжить начатую игру
@@ -54,20 +55,29 @@ def ibotCheckUserName(bot, message):
 
 # Get user settings
 def ibotGetUserSettings(userName):
-    # TODO: implemetn it
-    return ''
+    userSettings = Connection.getUserSetting(userName)
+    ret = None
+    if (dbFound(userSettings)):
+        ret = {'game_type':userSettings[0], 'complexity':userSettings[1]}
+    return ret
 
 # Get welcome message
 def ibotGetWelcomeMessage(userName):
     settings = ibotGetUserSettings(userName)
     ret = f'''
-        Добро пожаловать, {userName}!
-        Это игра "Угадай картину".
-        Твои текущие настройки следующие:
-        {settings}
-        Досупные команды можно посмотреть набрав '{CMD_SETTINGS}'
-        Чтобы начать игру - набери '{CMD_START}'
-        Удачи тебе!!!
+Добро пожаловать, {userName}!
+   Это игра "Угадай картину".
+
+Твои текущие настройки следующие:
+    '''
+    gameTypes = Connection.getGameTypes()
+    Complexities = Connection.getComplexities()
+    ret = ret + f'''Выбранный тип игры: "{gameTypes[settings["game_type"]][1]}"
+    '''
+    ret = ret + f'''Выбраннпая сложность: "{Complexities[settings["game_type"]][1]}"
+    '''
+    ret = ret + f'''
+Удачи тебе!!!
     '''
     return ret
 
@@ -168,7 +178,6 @@ def ibotShowQuestionType1(bot,message, gameId):
     gameInfo = Connection.getGameInfoById(gameId)
     finished = (gameInfo['result'] != None)
     if (finished):
-        # TODO: show finished info
         bot.send_message(message.from_user.id, text=f'Извините, но игра уже завершена. Введите "{CMD_START}" чтобы начать новую.')
         return
     imageIds = guess_image.getQuestionType1Options(gameInfo)
@@ -242,8 +251,7 @@ def ibotShowQuestionType2(bot,message, gameId, gameType = 2):
     imageInfo = Connection.getImageInfoById(imageId)
     finished = (gameInfo['result'] != None)
     if (finished):
-        # TODO: show finished info
-        bot.send_message(message.from_user.id, text='Sorry - this game is already finished. Please start new one.')
+        bot.send_message(message.from_user.id, text='Игра уже сыграна. Пожалуйста, начните новую.')
         return
     # Show image
     bot.send_photo(message.from_user.id, url)

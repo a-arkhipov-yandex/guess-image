@@ -565,6 +565,8 @@ class TestDB:
         # Create user
         Connection.insertUser(userNameCorrect)
         userId = Connection.getUserIdByName(userNameCorrect)
+        userSettings = Connection.getUserSetting(userNameCorrect)
+        resUserSettings = ((userSettings[0] == Connection.getDefaultGameType()) and (userSettings[1] == Connection.getDefaultComplexity()))
         gameType1 = Connection.getUserGameType(userNameCorrect)
         gameComplexity1 = Connection.getUserComplexity(userNameCorrect)
         gameTypeInCorrect = Connection.getUserGameType(userNameInCorrect)
@@ -580,6 +582,7 @@ class TestDB:
         Connection.deleteUser(userId)
 
         assert(gameType1 == origGameType)
+        assert(resUserSettings)
         assert(gameComplexity1 == origGameComplexity)
         assert(gameTypeInCorrect == None)
         assert(gameComplexityInCorrect == None)

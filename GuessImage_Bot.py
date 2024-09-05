@@ -23,7 +23,7 @@ def get_text_messages(message):
     elif (ibotCheckGameTypeNInProgress(bot, message, gameType=3)):
         return gameType3AnswerHanderl(bot, message)
     bot.send_message(message.from_user.id, 'Я вас не понимаю:(.')
-    bot.send_message(message.from_user.id, ibotGetHelpMessage())
+    bot.send_message(message.from_user.id, ibotGetHelpMessage(message.from_user.username))
 
 def cmdHandler(message):
     if message.text == CMD_START:
@@ -32,10 +32,10 @@ def cmdHandler(message):
     elif message.text == CMD_SETTINGS:
         settings(message)
     elif message.text == CMD_HELP:
-        bot.send_message(message.from_user.id, ibotGetHelpMessage())
+        bot.send_message(message.from_user.id, ibotGetHelpMessage(message.from_user.username))
     else:
         bot.send_message(message.from_user.id, "Неизвестная команда.")
-        bot.send_message(message.from_user.id, ibotGetHelpMessage())
+        bot.send_message(message.from_user.id, ibotGetHelpMessage(message.from_user.username))
 
 @bot.callback_query_handler(func=lambda message: message.data == CMD_START)
 def startHandler(message: types.Message):

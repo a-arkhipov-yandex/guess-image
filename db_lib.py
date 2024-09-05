@@ -308,6 +308,21 @@ class Connection:
                 return None
         return ret
 
+    # Get all settings for user
+    # Returns:
+    #   NOT_FOUND - no such user
+    #   None - issue with DB
+    #   [game_type,game_complexity]
+    def getUserSetting(userName):
+        # Get user id
+        userId = Connection.getUserIdByName(userName)
+        if (dbFound)(userId):
+            query = 'select game_type, game_complexity from users where id=%(id)s'
+            ret = Connection.executeQuery(query,{'id':userId})
+        else:
+            ret = userId
+        return ret
+
     # Get setting value. Returns key or None if not found or if connection is not initialized
     def getSettingValue(key):
         query = 'select value from settings where key=%(key)s'
