@@ -66,7 +66,7 @@ def dbLibCheckGameType(game_type):
         iType = int(game_type)
     except:
         return ret
-    if (iType == 1 or iType == 2):
+    if (iType >= 1 and iType <= 3):
         ret = True
     return ret
 
@@ -861,7 +861,7 @@ class Connection:
     #   NOT_FOUND - no game_types in DB
     #   None - issue with connection
     def getGameTypesFromDb():
-        query = 'select id,name,question from game_types'
+        query = 'select id,name,question from game_types order by id asc'
         ret = Connection.executeQuery(query,{},True)
         return ret
 

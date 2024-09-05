@@ -125,6 +125,8 @@ class guess_image:
             ret = guess_image.generateNewGame1(queryParams)
         elif (game_type == 2):
             ret = guess_image.generateNewGame2(queryParams)
+        elif (game_type == 3):
+            ret = guess_image.generateNewGame3(queryParams)
         else:
             print(f'ERROR: generateNewGame: unknown game type {game_type}')
         return ret
@@ -206,38 +208,50 @@ class guess_image:
             Connection.setCurrentGame(userName, ret)
         return ret
 
-    # Generate new game with type 2: guess creator of the image
+    # Generate new game with type 2 or 3 (if gameType is set): guess creator of the image
     # Returns:
     #   None - is any error
     #   gameId - id of new game
-    def generateNewGame2(queryParams):
+    def generateNewGame2(queryParams, gameType = 2):
+        fName = guess_image.generateNewGame2.__name__
+        # Check game type
+        if (gameType != 2 and gameType != 3):
+            print(f'ERROR: {fName}: Incorrect game type provided: {gameType}')
+            return None
         complexity = int(queryParams['complexity'])
         # Get random image info
         imageId = Connection.getRandomImageIdsOfAnyCreator(complexity, 1) # get 1 image
         if (dbNotFound(imageId)):
-            print(f'ERROR: generateNewGame2: Cannot get random image')
+            print(f'ERROR: {fName}: Cannot get random image')
             return None
         # Get image info
         imageInfo = Connection.getImageInfoById(imageId)
         if (dbNotFound(imageInfo)):
-            print(f'ERROR: generateNewGame2: Cannot get random image info (image id = {imageId})')
+            print(f'ERROR: {fName}: Cannot get random image info (image id = {imageId})')
             return None
         userName = queryParams['user']
         userId = Connection.getUserIdByName(userName)
         if (userId == None or dbNotFound(userId)):
-            print(f'ERROR: generateNewGame2: Cannot get user id by name {userName}')
+            print(f'ERROR: {fName}: Cannot get user id by name {userName}')
             return None
         gameType = queryParams['type']
         creatorId = imageInfo['creatorId']
-        # Generate game with user, type(2), question(image id), correct_answer (creator_id)
+        # Generate game with user, type(2-3), question(image id), correct_answer (creator_id), complexity
         ret = Connection.insertGame(userId,gameType,creatorId,imageId,complexity)
         if (ret == None):
-            print(f'ERROR: generateNewGame2: Cannot insert game u={userName},gt={gameType},q={imageId},ca={creatorId}')
+            print(f'ERROR: {fName}: Cannot insert game u={userName},gt={gameType},q={imageId},ca={creatorId}')
             return None
         else:
             # Set current_game
             Connection.setCurrentGame(userName, ret)
         return ret
+
+    # Generate new game with type 3: guess creator of the image - no variants
+    # Returns:
+    #   None - is any error
+    #   gameId - id of new game
+    def generateNewGame3(queryParams):
+        return guess_image.generateNewGame2(queryParams, gameType=3)
 
     # New game creation and question page to show
     def pageNewGame(queryParams):
@@ -255,12 +269,15 @@ class guess_image:
     def getTextQuestion(gameInfo):
         gameType = int(gameInfo['type'])
         textQ = "Default text question"
-
         if gameType == 1: # Type = 1
             imageInfo = Connection.getImageInfoById(gameInfo['correct_answer'])
             if (dbFound(imageInfo)):
                 textQ = f"Какую картину написал \"{imageInfo['creatorName']}\" в {imageInfo['yearStr']}?"
-        else: # Type = 2
+        elif (gameType == 2):
+            imageInfo = Connection.getImageInfoById(gameInfo['question'])
+            if (dbFound(imageInfo)):
+                textQ = f"Кто написал картину \"{imageInfo['imageName']}\" в {imageInfo['yearStr']}?"
+        else: # Type = 3
             imageInfo = Connection.getImageInfoById(gameInfo['question'])
             if (dbFound(imageInfo)):
                 textQ = f"Кто написал картину \"{imageInfo['imageName']}\" в {imageInfo['yearStr']}?"

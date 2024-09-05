@@ -3,8 +3,8 @@ from db_lib import *
 from game_lib import *
 from gibot_lib import *
 
-TESTCONNECTION = True
-TESTBOT = True
+TESTCONNECTION = isTestDB()
+TESTBOT = isTestBot()
 
 botToken = getBotToken(TESTBOT)
 if (not botToken):
@@ -20,27 +20,28 @@ def get_text_messages(message):
     # Check if there is cmd
     if (message.text[0] == '/'):
         return cmdHandler(message)
-    bot.send_message(message.from_user.id, 'Неизваестный текст')
+    elif (ibotCheckGameTypeNInProgress(bot, message, gameType=3)):
+        return gameType3AnswerHanderl(bot, message)
+    bot.send_message(message.from_user.id, 'Я вас не понимаю:(.')
+    bot.send_message(message.from_user.id, ibotGetHelpMessage())
 
 def cmdHandler(message):
-    if message.text == "/start":
+    if message.text == CMD_START:
         ret = startHandler(message)
         #bot.send_message(message.from_user.id, ret)
-    elif message.text == "/settings":
+    elif message.text == CMD_SETTINGS:
         settings(message)
-    elif message.text == "/help":
-        ret = ibotGetHelpMessage()
-        bot.send_message(message.from_user.id, ret)
+    elif message.text == CMD_HELP:
+        bot.send_message(message.from_user.id, ibotGetHelpMessage())
     else:
-        ret = ibotGetHelpMessage()
         bot.send_message(message.from_user.id, "Неизвестная команда.")
-        bot.send_message(message.from_user.id, ret)
+        bot.send_message(message.from_user.id, ibotGetHelpMessage())
 
-@bot.callback_query_handler(func=lambda message: message.data == '/start')
+@bot.callback_query_handler(func=lambda message: message.data == CMD_START)
 def startHandler(message: types.Message):
     startNewGame(message)
 
-@bot.callback_query_handler(func=lambda message: message.data == '/settings')
+@bot.callback_query_handler(func=lambda message: message.data == CMD_SETTINGS)
 def settingsHandler(message: types.Message):
     settings(message)
 
@@ -80,12 +81,12 @@ def gameTypeHanderl(message: types.Message):
     # Set game type for the user
     ret = Connection.updateUserGameType(userName, gameType)
     if (not ret):
-        bot.send_message(message.from_user.id, 'Cannot update game type. Please try again later.')
+        bot.send_message(message.from_user.id, 'Не получилось изменить тип игры. Попробуйте позже.')
         return
     # Success message
     bot.send_message(message.from_user.id, 'Настройки изменены успешно!')
-    key1 = types.InlineKeyboardButton(text='Начать новую игру', callback_data=f'/start')
-    key2= types.InlineKeyboardButton(text='Выбрать другой тип игры/сложность', callback_data=f'/settings')
+    key1 = types.InlineKeyboardButton(text='Начать новую игру', callback_data=CMD_START)
+    key2= types.InlineKeyboardButton(text='Выбрать другой тип игры/сложность', callback_data=CMD_SETTINGS)
     keyboard = types.InlineKeyboardMarkup(); # keyboard
     keyboard.add(key1)
     keyboard.add(key2)
@@ -134,7 +135,7 @@ def gameType2AnswerHanderl(message: types.Message):
     # Get current game
     gameId = Connection.getCurrentGame(userName)
     if (not gameId):
-        bot.send_message(message.from_user.id, text='Нет запущенных игр. Введите "/start" чтобы начать новую.')
+        bot.send_message(message.from_user.id, text=f'Нет запущенных игр. Введите "{CMD_START}" чтобы начать новую.')
         return
 
     # Finish game and return result
@@ -147,7 +148,39 @@ def gameType2AnswerHanderl(message: types.Message):
     correctAnswerId = gameInfo.get('correct_answer')
     correctAnswer = Connection.getCreatorNameById(correctAnswerId)
     correctMessage = f'Эту картину написал {correctAnswer}.'
-    ibotShowGameResult(bot, message, result, correctAnswer, correctMessage)
+    ibotShowGameResult(bot=bot, message=message, result=result, correctAnswer=correctAnswer, correctMessage=correctMessage)
+
+def gameType3AnswerHanderl(bot, message: types.Message):
+    userName = message.from_user.username
+    # Check user name format first
+    if (not ibotCheckUserName(bot, message)):
+        return
+    # Get current game
+    gameId = Connection.getCurrentGame(userName)
+    if (not gameId):
+        bot.send_message(message.from_user.id, text=f'Нет запущенных игр. Введите "{CMD_START}" чтобы начать новую.')
+        return
+
+    # User answer
+    userCreatorName = message.text
+    # Get game info
+    gameInfo = Connection.getGameInfoById(gameId)
+    # Get correct answer - creatorId from DB
+    correctAnswerId = gameInfo.get('correct_answer')
+    correctAnswer = Connection.getCreatorNameById(correctAnswerId)
+    answer = 0
+
+    if (ibotCheckAnswerGameType3(userCreatorName, correctAnswer)):
+        answer = correctAnswerId # User is correct
+
+    # Finish game and return result
+    guess_image.finishGame(userName, gameId, answer)
+    # Check result
+    # Get game info to update result
+    gameInfo = Connection.getGameInfoById(gameId)
+    result = gameInfo['result']
+    correctMessage = f'Эту картину написал {correctAnswer}.'
+    ibotShowGameResult(bot=bot, message=message, result=result, correctAnswer=correctAnswer, correctMessage=correctMessage)
 
 @bot.callback_query_handler(func=lambda message: re.match(fr'^{IBOT_TYPE1_ANSWER}\d+$', message.data))
 def gameType1AnswerHanderl(message: types.Message):
@@ -202,13 +235,8 @@ def ibotShowGameResult(bot, message, result, correctAnswer, correctMessage='', c
             correctAnswerTxt = f' под номером {correctAnswerNum}'
 
         bot.send_message(message.from_user.id, text=f'А вот и не верно. Верный ответ{correctAnswerTxt}: "{correctAnswer}"')
-    key1 = types.InlineKeyboardButton(text='Сыграть еще раз', callback_data=f'/start')
-    key2= types.InlineKeyboardButton(text='Выбрать другой тип игры/сложность', callback_data=f'/settings')
-    keyboard = types.InlineKeyboardMarkup(); # keyboard
-    keyboard.add(key1)
-    keyboard.add(key2)
-    question = 'Выберите дальнейшее действие:'
-    bot.send_message(message.from_user.id, text=question, reply_markup=keyboard)
+    
+    ibotSendAfterAnswer(bot, message)
 
 #===============
 # Main section

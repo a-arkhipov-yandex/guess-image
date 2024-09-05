@@ -1,4 +1,5 @@
 from db_lib import *
+from gibot_lib import ibotCheckAnswerGameType3
 from guess_image_lib import *
 from s3_lib import *
 from img_fs_lib import *
@@ -33,9 +34,11 @@ def main():
 
     #Connection.clearAllCurrentGames()
 
-    Connection.updateCreatorsFromCSV()
+    #Connection.updateCreatorsFromCSV()
 
-    Connection.updateDB(creators, titles, years, intYears, orientations)
+    #Connection.updateDB(creators, titles, years, intYears, orientations)
+
+    print(ibotCheckAnswerGameType3('клод моне', 'клод моне'))
 
     #print(Connection.getCreatorIdByName('Винсент Ван Гог'))
     #html = showNImages(4)

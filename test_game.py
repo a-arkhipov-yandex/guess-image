@@ -10,6 +10,8 @@ class TestGame:
     unfinishedGameType2Id = None
     finishedGameType1Id = None
     finishedGameType2Id = None
+    unfinishedGameType3Id = None
+    finishedGameType3Id = None
 
     def testPreparation(self):
         # Create connection
@@ -32,10 +34,15 @@ class TestGame:
         assert(gameData != None)
         TestGame.unfinishedGameType1Id = gameType1Id
         # Create unfinished game type 2
-        params = {'user':TestGame.testUserName,'type':2,'complexity':1}
+        params = {'user':TestGame.testUserName,'type':2,'complexity':2}
         gameType2Id = guess_image.generateNewGame2(params)
         assert(gameType2Id)
         TestGame.unfinishedGameType2Id = gameType2Id
+        # Create unfinished game type 3
+        params = {'user':TestGame.testUserName,'type':3,'complexity':3}
+        gameType3Id = guess_image.generateNewGame3(params)
+        assert(gameType3Id)
+        TestGame.unfinishedGameType3Id = gameType3Id
 
         # Create unfinished game type 1
         params = {'user':TestGame.testUserName,'type':1, 'complexity':1}
@@ -43,10 +50,15 @@ class TestGame:
         assert(gameType1Id)
         TestGame.finishedGameType1Id = gameType1Id
         # Create unfinished game type 2
-        params = {'user':TestGame.testUserName,'type':2, 'complexity':1}
+        params = {'user':TestGame.testUserName,'type':2, 'complexity':2}
         gameType2Id = guess_image.generateNewGame2(params)
         assert(gameType2Id)
         TestGame.finishedGameType2Id = gameType2Id
+        # Create unfinished game type 3
+        params = {'user':TestGame.testUserName,'type':3, 'complexity':3}
+        gameType3Id = guess_image.generateNewGame3(params)
+        assert(gameType3Id)
+        TestGame.finishedGameType3Id = gameType3Id
 
         # Finish game type 1 with True result
         gameType1Info = Connection.getGameInfoById(gameType1Id)
@@ -54,6 +66,9 @@ class TestGame:
         # Finish game type 2 with False result
         gameType2Info = Connection.getGameInfoById(gameType2Id)
         Connection.finishGame(gameType2Id, gameType2Info.get('correct_answer')+1)
+        # Finish game type 3 with False result
+        gameType3Info = Connection.getGameInfoById(gameType3Id)
+        Connection.finishGame(gameType3Id, gameType3Info.get('correct_answer'))
 
         TestGame.isInitialized = True
 
@@ -94,8 +109,9 @@ class TestGame:
             ('1', '1', guess_image.NEW_GAME_PAGE),
             ('2', '2', guess_image.NEW_GAME_PAGE),
             ('2', '3', guess_image.NEW_GAME_PAGE),
+            ('3', '2', guess_image.NEW_GAME_PAGE),
             # Incorrect
-            ('3', '2', guess_image.GAME_TYPE_PAGE),
+            ('4', '2', guess_image.GAME_TYPE_PAGE),
             ('0', '2', guess_image.GAME_TYPE_PAGE),
             ('-1', '2', guess_image.GAME_TYPE_PAGE),
             ('a', '2', guess_image.GAME_TYPE_PAGE),
@@ -149,6 +165,12 @@ class TestGame:
         resQuestionPageUnfinishedGameType2 = guess_image.getPageToShow(query_params)
         content = guess_image.pageQuestion(query_params)
         resQuestionPageContentUnfinishedGameType2 = (('Result page' not in content) and ('Question type 2 page' in content))
+        query_params = {'user': TestGame.testUserName, 'game':str(TestGame.unfinishedGameType3Id)}
+        resQuestionPageUnfinishedGameType3 = guess_image.getPageToShow(query_params)
+        content = guess_image.pageQuestion(query_params)
+        resQuestionPageContentUnfinishedGameType3 = (('Result page' not in content) and ('Not implemented yet' in content))
+
+
         query_params = {'user': TestGame.testUserName, 'game':str(TestGame.finishedGameType1Id)}
         resQuestionPageFinishedGameType1 = guess_image.getPageToShow(query_params)
         content = guess_image.pageQuestion(query_params)
@@ -161,8 +183,10 @@ class TestGame:
         assert(resNonexistingGame == guess_image.GAME_TYPE_PAGE)
         assert(resQuestionPageUnfinishedGameType1 == guess_image.QUESTION_PAGE)
         assert(resQuestionPageUnfinishedGameType2 == guess_image.QUESTION_PAGE)
+        assert(resQuestionPageUnfinishedGameType3 == guess_image.QUESTION_PAGE)
         assert(resQuestionPageContentUnfinishedGameType1)
         assert(resQuestionPageContentUnfinishedGameType2)
+        assert(resQuestionPageContentUnfinishedGameType3)
         assert(resQuestionPageFinishedGameType1 == guess_image.QUESTION_PAGE)
         assert(resQuestionPageFinishedGameType2 == guess_image.QUESTION_PAGE)
         assert(resQuestionPageContentFinishedGameType1True)
@@ -199,9 +223,10 @@ class TestGame:
         [
             ('1', True), # game type 1
             ('2', True), # game type 2
+            ('3', True), # game type 3
         ],
     )
-    def testGenerateNewGame12CorrectValues(self, game_type, expected_result):
+    def testGenerateNewGame123CorrectValues(self, game_type, expected_result):
         resNewGame = False
         resCheckInsertedGame = False
         params = {'user':TestGame.testUserName,'type':game_type, 'complexity':1}
@@ -427,12 +452,16 @@ class TestGame:
         assert(resDeleteGame1)
         resDeleteGame2 = Connection.deleteGame(TestGame.unfinishedGameType2Id)
         assert(resDeleteGame2)
+        resDeleteGame3 = Connection.deleteGame(TestGame.unfinishedGameType3Id)
+        assert(resDeleteGame3)
 
         # Delete finished games
-        resDeleteGame3 = Connection.deleteGame(TestGame.finishedGameType1Id)
+        resDeleteGame4 = Connection.deleteGame(TestGame.finishedGameType1Id)
         assert(resDeleteGame3)
-        resDeleteGame4 = Connection.deleteGame(TestGame.finishedGameType2Id)
+        resDeleteGame5 = Connection.deleteGame(TestGame.finishedGameType2Id)
         assert(resDeleteGame4)
+        resDeleteGame6 = Connection.deleteGame(TestGame.finishedGameType3Id)
+        assert(resDeleteGame6)
         # Delete test user - do not delete user as it has games left
         #resDeleteUser = Connection.deleteUser(TestGame.testUserId)
         #assert(resDeleteUser)

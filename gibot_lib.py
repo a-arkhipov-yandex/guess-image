@@ -11,6 +11,10 @@ IBOT_TYPE1_ANSWER = 'type1answer:'
 IBOT_TYPE2_ANSWER = 'type2answer:'
 IBOT_GAMETYPE_ANSWER = 'gametype:'
 
+CMD_START = '/start'
+CMD_HELP = '/help'
+CMD_SETTINGS = '/settings'
+
 # Returns help message
 def ibotGetHelpMessage():
     return '''
@@ -43,13 +47,14 @@ def ibotCheckUserName(bot, message):
     if (not ibotIsUserExist(userName)):
         bot.send_message(
             message.from_user.id,
-            text=f'Пользователь не зарегистрирован. Наберите "/start".'
+            text=f'Пользователь не зарегистрирован. Наберите "{CMD_START}".'
         )
         return False
     return True
 
 # Get user settings
 def ibotGetUserSettings(userName):
+    # TODO: implemetn it
     return ''
 
 # Get welcome message
@@ -60,8 +65,8 @@ def ibotGetWelcomeMessage(userName):
         Это игра "Угадай картину".
         Твои текущие настройки следующие:
         {settings}
-        Досупные команды можно посмотреть набрав '/help'
-        Чтобы начать игру - набери '/start'
+        Досупные команды можно посмотреть набрав '{CMD_SETTINGS}'
+        Чтобы начать игру - набери '{CMD_START}'
         Удачи тебе!!!
     '''
     return ret
@@ -69,6 +74,25 @@ def ibotGetWelcomeMessage(userName):
 # Settings section
 def ibotSettings(bot, message):
     ibotRequestGameType(bot, message)
+
+# Check that game3 is in progress
+# Returns: True/False
+def ibotCheckGameTypeNInProgress(bot, message, gameType):
+    fName = ibotCheckGameTypeNInProgress.__name__
+    userName = message.from_user.username
+    # Check user name format first
+    ret = ibotCheckUserName(bot, message)
+    if (not ret):
+        return False
+    ret = Connection.getCurrentGame(userName)
+    if (dbFound(ret)):
+        gameInfo = Connection.getGameInfoById(ret)
+        if (dbFound(gameInfo)): # Game info is valid
+            if (gameInfo['type'] == gameType):
+                return True
+        else:
+            print(f'ERROR: {fName}: Cannot get gameInfo from DB: {ret}')
+    return False
 
 # Register new user. Returns: True/False
 def ibotUserRegister(userName):
@@ -120,9 +144,13 @@ def ibotRequestComplexity(bot, message):
 def ibotShowQuestion(bot,message,type,gameId):
     if (type == 1):
         ibotShowQuestionType1(bot,message, gameId)
-    else:
+    elif (type == 2):
         ibotShowQuestionType2(bot,message, gameId)
-
+    elif (type == 3): # type = 3
+        ibotShowQuestionType3(bot,message, gameId)
+    else:
+        bot.send_message(message.from_user.id, "Неизваестный тип игры. Пожалуйста, начните новую игру.")
+    
 # Find number of correct answer in type 1 question
 # Returns:
 #   i - num of correct answer starting from 1
@@ -141,7 +169,7 @@ def ibotShowQuestionType1(bot,message, gameId):
     finished = (gameInfo['result'] != None)
     if (finished):
         # TODO: show finished info
-        bot.send_message(message.from_user.id, text='Извините, но игра уже завершена. Введите "/start" чтобы начать новую.')
+        bot.send_message(message.from_user.id, text=f'Извините, но игра уже завершена. Введите "{CMD_START}" чтобы начать новую.')
         return
     imageIds = guess_image.getQuestionType1Options(gameInfo)
     if (not imageIds):
@@ -175,6 +203,16 @@ def ibotShowQuestionType1(bot,message, gameId):
     keyboard = types.InlineKeyboardMarkup([keys])
     bot.send_message(message.from_user.id, text='Выберите вариант:', reply_markup=keyboard)
 
+# Send buttons after answer
+def ibotSendAfterAnswer(bot, message):
+    key1 = types.InlineKeyboardButton(text='Сыграть еще раз', callback_data=CMD_START)
+    key2= types.InlineKeyboardButton(text='Выбрать другой тип игры/сложность', callback_data=CMD_SETTINGS)
+    keyboard = types.InlineKeyboardMarkup(); # keyboard
+    keyboard.add(key1)
+    keyboard.add(key2)
+    question = 'Выберите дальнейшее действие:'
+    bot.send_message(message.from_user.id, text=question, reply_markup=keyboard)
+
 # Modify captures of images with creator, name, year
 def ibotModifyImageCaptures(bot, message, mIds, imageIds):
     if (len(mIds) != len(imageIds)):
@@ -193,7 +231,7 @@ def ibotModifyImageCapture(bot, message, messageId, imageId):
     else:
         print(f'ERROR: {ibotModifyImageCapture.__name__}: Cannot get image info for {imageId}')
 
-def ibotShowQuestionType2(bot,message, gameId):
+def ibotShowQuestionType2(bot,message, gameId, gameType = 2):
     # Get gameInfo
     gameInfo = Connection.getGameInfoById(gameId)
     complexity = gameInfo['complexity']
@@ -207,21 +245,49 @@ def ibotShowQuestionType2(bot,message, gameId):
         # TODO: show finished info
         bot.send_message(message.from_user.id, text='Sorry - this game is already finished. Please start new one.')
         return
-    creatorId = imageInfo['creatorId']
-    creatorName = imageInfo['creatorName']
-    creators = Connection.getNCreators(CREATORS_IN_TYPE2_ANSWER, creatorId, complexity)
-    creators.append({'creatorId':creatorId,'creatorName':creatorName})
-    shuffle(creators)
     # Show image
     bot.send_photo(message.from_user.id, url)
-    # Show buttons with answer options
-    keyboard = types.InlineKeyboardMarkup()
-    for i in range(0, len(creators)): # 2 because we start with 1 + correct creator
-        creatorId = creators[i].get('creatorId')
-        creatorName = creators[i].get('creatorName')
-        data = f'{IBOT_TYPE2_ANSWER}{creatorId}'
-        key = types.InlineKeyboardButton(text=creatorName, callback_data=data)
-        keyboard.add(key)
     textQuestion = guess_image.getTextQuestion(gameInfo)
-    bot.send_message(message.from_user.id, text=textQuestion, reply_markup=keyboard)
+    if (gameType == 2): # Show answer options
+        creatorId = imageInfo['creatorId']
+        creatorName = imageInfo['creatorName']
+        creators = Connection.getNCreators(CREATORS_IN_TYPE2_ANSWER, creatorId, complexity)
+        creators.append({'creatorId':creatorId,'creatorName':creatorName})
+        shuffle(creators)
+        # Show buttons with answer options
+        keyboard = types.InlineKeyboardMarkup()
+        for i in range(0, len(creators)): # 2 because we start with 1 + correct creator
+            creatorId = creators[i].get('creatorId')
+            creatorName = creators[i].get('creatorName')
+            data = f'{IBOT_TYPE2_ANSWER}{creatorId}'
+            key = types.InlineKeyboardButton(text=creatorName, callback_data=data)
+            keyboard.add(key)
 
+        bot.send_message(message.from_user.id, text=textQuestion, reply_markup=keyboard)
+    else: # game type == 3
+        bot.send_message(message.from_user.id, text=textQuestion)
+
+def ibotShowQuestionType3(bot,message, gameId):
+    return ibotShowQuestionType2(bot,message, gameId, gameType=3)
+
+
+def ibotCheckAnswerGameType3(userCreatorName, correctCreatorName):
+    # 1. Convern both strings to the same format
+    userCreatorName = userCreatorName.lower() # Convert to lower
+    correctCreatorName = correctCreatorName.lower()
+    userCreatorName = userCreatorName.replace('ё','е') # Replace 'ё'
+    correctCreatorName = correctCreatorName.replace('ё','е') # Replace 'ё'
+
+    lU = len(userCreatorName)
+    lC = len(correctCreatorName)
+    # 2. Check length of userAnswer
+    if (lU > lC or lU <3):
+        return False
+    
+    # 2. Check if it is long enough and match the end of the string (last name only)
+
+    lU = len(userCreatorName)
+    lC = len(correctCreatorName)
+
+    ret = ((userCreatorName in correctCreatorName) and (lU >= lC/2))
+    return ret

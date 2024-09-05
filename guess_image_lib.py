@@ -21,8 +21,27 @@ ENV_DBTESTNAME = 'DBTESTNAME'
 ENV_DBTESTUSER = 'DBTESTUSER'
 ENV_DBTESTTOKEN ='DBTESTTOKEN'
 
-ENV_BOTTOKEN ='BOTTOKEN'
-ENV_BOTTOKENTEST ='BOTTOKENTEST'
+ENV_BOTTOKEN = 'BOTTOKEN'
+ENV_BOTTOKENTEST = 'BOTTOKENTEST'
+
+ENV_TESTDB = 'TESTDB'
+ENV_TESTBOT = 'TESTBOT'
+
+def isTestBot():
+    ret = True
+    testbot = getenv(ENV_TESTBOT)
+    if (testbot):
+        if (testbot == "False"):
+            ret = False
+    return ret
+
+def isTestDB():
+    ret = True
+    testdb = getenv(ENV_TESTDB)
+    if (testdb):
+        if (testdb == "False"):
+            ret = False
+    return ret    
 
 def getBotToken(test):
     load_dotenv()

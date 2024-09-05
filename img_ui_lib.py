@@ -353,10 +353,12 @@ def showGameTypePage(params, game_types):
 def showQuestionPage(params, gameInfo, textQuestion):
     gameType = gameInfo['type']
     content = "Default question game page:"
-    if gameType == 1:
+    if (gameType == 1):
         content = showQuestionGameType1(params, gameInfo, textQuestion)
-    else:
+    elif (gameType == 2):
         content = showQuestionGameType2(params, gameInfo, textQuestion)
+    else:
+        content = "Not implemented yet"
 
     return content
 

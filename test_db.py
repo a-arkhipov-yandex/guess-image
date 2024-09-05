@@ -414,11 +414,11 @@ class TestDB:
 
     def testGetGameTypesFromDb(self):
         resCorrectImage = Connection.getGameTypesFromDb()
-        assert(len(resCorrectImage) == 2)
+        assert(len(resCorrectImage) == 3)
 
     def testGetGameTypesFromCache(self):
         resCorrectImage = Connection.getGameTypes()
-        assert(len(resCorrectImage) == 2)
+        assert(len(resCorrectImage) == 3)
 
     def testFinishGame(self):
         resNonexistingGame = Connection.finishGame(2000000, 1)
