@@ -36,9 +36,10 @@ def main():
     string1 = "пабло пикассо"
     string2 = "пабло пикасо"
 
-    l_dist = distance(string1, string2)
 
-    print("Levenshtein Distance between "+string1+" & "+string2+" is " + str(l_dist))
+    ret = ibotCheckAnswerGameType3('айвазовский', 'Иван Айвазовский')
+    ret = ibotCheckAnswerGameType3('айвазовский', 'Иван Айвазовский')
+    print(ret)
 
     #Connection.clearAllCurrentGames()
 

@@ -285,6 +285,7 @@ def ibotCheckAnswerGameType3(userCreatorName, correctCreatorName):
     correctCreatorName = correctCreatorName.lower()
     userCreatorName = userCreatorName.replace('ё','е') # Replace 'ё'
     correctCreatorName = correctCreatorName.replace('ё','е') # Replace 'ё'
+    correctCreatorName = correctCreatorName.replace('й','й') # Replace 'й'
 
     # 0. Full match
     if (userCreatorName == correctCreatorName):
@@ -293,11 +294,12 @@ def ibotCheckAnswerGameType3(userCreatorName, correctCreatorName):
     lU = len(userCreatorName)
     lC = len(correctCreatorName)
     # 2. Check length of userAnswer
-    if (lU > lC or lU <3):
+    if (lU > lC or lU <2):
         return False
     
     # 2. Check if it is long enough and match the end of the string (last name only)
     correctName2 = correctCreatorName[-lU:]
+    print(correctName2)
     if (userCreatorName == correctName2):
         return True
 
