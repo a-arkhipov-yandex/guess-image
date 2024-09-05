@@ -221,7 +221,8 @@ def gameType1AnswerHanderl(message: types.Message):
     correctAnswerId = gameInfo.get('correct_answer')
     correctAnswer = Connection.getImageInfoById(correctAnswerId).get('imageName')
     correctMessage = f'Это картина "{correctAnswer}"'
-    ibotShowGameResult(bot, message, result, correctAnswer, correctMessage, correctAnswerNum)
+    ibotShowGameResult(bot=bot, message=message, result=result, correctAnswer=correctAnswer,
+                       correctMessage=correctMessage, correctAnswerNum=correctAnswerNum)
 
 # Show game result
 def ibotShowGameResult(bot, message, result, correctAnswer, correctMessage='', correctAnswerNum=None):
