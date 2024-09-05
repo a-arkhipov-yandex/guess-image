@@ -28,6 +28,7 @@ ENV_TESTDB = 'TESTDB'
 ENV_TESTBOT = 'TESTBOT'
 
 def isTestBot():
+    load_dotenv()
     ret = True
     testbot = getenv(ENV_TESTBOT)
     if (testbot):
@@ -36,6 +37,7 @@ def isTestBot():
     return ret
 
 def isTestDB():
+    load_dotenv()
     ret = True
     testdb = getenv(ENV_TESTDB)
     if (testdb):
