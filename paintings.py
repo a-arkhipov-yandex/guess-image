@@ -37,9 +37,10 @@ def main():
     string2 = "пабло пикасо"
 
 
-    ret = ibotCheckAnswerGameType3('айвазовский', 'Иван Айвазовский')
-    ret = ibotCheckAnswerGameType3('айвазовский', 'Иван Айвазовский')
+    ret = ibotCheckAnswerGameType3('перо', 'перов')
+    #ret = ibotCheckAnswerGameType3('айвазовский', 'Иван Айвазовский')
     print(ret)
+    print(isStrSimilar('винча', 'винчи'))
 
     #Connection.clearAllCurrentGames()
 

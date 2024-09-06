@@ -435,11 +435,20 @@ class Connection:
                 ret = ids
         return ret
 
-    # Returns 'n' imageIds or None if connection not initialized or issue with DB
-    def getRandomImageIdsOfAnyCreator(complexity, n = 1):
-        #query = "SELECT id FROM images ORDER BY RANDOM() LIMIT %(n)s"
-        query = "SELECT i.id FROM images as i join creators c on i.creator = c.id where complexity<=%(c)s ORDER BY RANDOM() LIMIT %(n)s"
-        ret = Connection.executeQuery(query, {'c':complexity, 'n':n})  
+    # Gets 'n' images of creator (or any creator if None) for complexity
+    # Returns:
+    #   [id1, id2,...] - 'n' imageIds
+    #   None if connection not initialized or issue with DB
+    def getRandomImageIdsOfAnyCreator(complexity, creatorId=None, n = 1):
+        params = {'c':complexity, 'n':n}
+        query_start = "SELECT i.id FROM images as i join creators as c on i.creator = c.id where c.complexity<=%(c)s"
+        query_middle =''
+        if (creatorId):
+            query_middle = ' and c.id=%(cId)s'
+            params['cId'] = creatorId
+        query_end = " ORDER BY RANDOM() LIMIT %(n)s"
+        query = query_start + query_middle + query_end
+        ret = Connection.executeQuery(query, params)  
         if (dbFound(ret)):
             if (n == 1):
                 ret = ret[0]

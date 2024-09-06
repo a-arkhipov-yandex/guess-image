@@ -294,15 +294,30 @@ def ibotCheckAnswerGameType3(userCreatorName, correctCreatorName):
     lU = len(userCreatorName)
     lC = len(correctCreatorName)
     # 2. Check length of userAnswer
-    if (lU > lC or lU <2):
+    if (lU > lC):
         return False
     
-    # 2. Check if it is long enough and match the end of the string (last name only)
-    correctName2 = correctCreatorName[-lU:]
-    print(correctName2)
-    if (userCreatorName == correctName2):
+    # 3. Check if only one word in answer (probably last name)
+    userAnswerWords = userCreatorName.split(' ')
+    if (len(userAnswerWords) == 1):
+        # Get last work of correctAnswer
+        correctAnswerWords = correctCreatorName.split(' ')
+        userAnswerLastWord = userAnswerWords[0]
+        correctAnswerLastWord = correctAnswerWords[-1]
+        print(f'User last word: {userAnswerLastWord} | Correct last word: {correctAnswerLastWord}')
+        # If correct last word len < 3 - only exact answer
+        if (len(correctAnswerLastWord) <= 3):
+            if (userAnswerLastWord == correctAnswerLastWord):
+                return True
+        else:
+            # Check similarity for last name
+            ret = isStrSimilar(userAnswerLastWord, correctAnswerLastWord)
+            if (ret):
+                return True
+
+    # 4. Check Levenstein similarity for full answer
+    ret = isStrSimilar(userCreatorName, correctCreatorName)
+    if (ret):
         return True
 
-    # Check Levenstein similarity
-    ret = isStrSimilar(userCreatorName, correctCreatorName)
     return ret

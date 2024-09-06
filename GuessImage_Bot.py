@@ -2,6 +2,8 @@ import telebot
 from db_lib import *
 from game_lib import *
 from gibot_lib import *
+import requests
+
 
 TESTCONNECTION = isTestDB()
 TESTBOT = isTestBot()
@@ -11,7 +13,6 @@ if (not botToken):
     print(f'Cannot read ENV vars: botToken={botToken}')
     exit()
 bot = telebot.TeleBot(botToken)
-Connection.initConnection(test=TESTCONNECTION)
 
 # Message handler
 @bot.message_handler(content_types=['text'])
@@ -247,11 +248,17 @@ def ibotShowGameResult(bot, message, result, correctAnswer, correctMessage='', c
 # Main section
 #---------------
 def main():
-    bot.polling(none_stop=True, interval=1)
+    Connection.initConnection(test=TESTCONNECTION)
+    while(True):
+        try:
+            bot.infinity_polling()
+        except KeyboardInterrupt:
+            print('\nExiting by user request.\n')
+            break
+        except requests.exceptions.ReadTimeout as error:
+            print(f'ERROR: main: exception: {error}')
+            continue
+    Connection.closeConnection()
 
 if __name__ == "__main__":
-    try:
-        main()
-    except KeyboardInterrupt:
-        print('\nExiting by user request.\n')
-        Connection.closeConnection()
+    main()

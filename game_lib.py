@@ -156,39 +156,57 @@ class guess_image:
             return None
         return mIds
 
-    # Generate new game with type 1: guess image of the creator
+    # Get random creator and ramdom image of this creator
     # Returns:
-    #   None - is any error
-    #   gameId - id of new game
-    def generateNewGame1(queryParams):
-        complexity = int(queryParams.get('complexity'))
+    #   (creatorId, imageId) - tuple with ids
+    #   None - in case of any errors
+    def getRandomCreatorAndImageId(complexity):
+        fName = guess_image.getRandomCreatorAndImageId.__name__
        # Get random creator
         ret = Connection.getRandomCreatorIds(complexity)
         if (ret == None):
-            print(f'ERROR: generateNewGame1: Cannoe get random creator: DB issue')
+            print(f'ERROR: {fName}: Cannoe get random creator: DB issue')
             return None
         elif (dbNotFound(ret)):
-            print(f'ERROR: generateNewGame1: Cannot get random creator: creator not found')
+            print(f'ERROR: {fName}: Cannot get random creator: creator not found')
             return None  
         creatorId = ret[0]
         # Get random image of the creator
         ret = Connection.getRandomImageIdsOfCreator(creatorId)
         if (ret == None):
-            print(f'ERROR: generateNewGame1: Cannot get random image of creator {creatorId}: DB issue')
+            print(f'ERROR: {fName}: Cannot get random image of creator {creatorId}: DB issue')
             return None
         elif (dbNotFound(ret)):
-            print(f'ERROR: generateNewGame1: Cannot get random image of creator {creatorId}: image not found')
+            print(f'ERROR: {fName}: Cannot get random image of creator {creatorId}: image not found')
             return None
         imageId = ret[0]
+        return (creatorId, imageId)
+
+    # Generate new game with type 1: guess image of the creator
+    # Returns:
+    #   None - is any error
+    #   gameId - id of new game
+    def generateNewGame1(queryParams):
+        fName = guess_image.generateNewGame1.__name__
+        complexity = queryParams.get('complexity')
+        if (not complexity):
+            print(f'ERROR: {fName}: Cannot get complexity: {queryParams}')
+            return None
+        complexity = int(complexity)
+        ret = guess_image.getRandomCreatorAndImageId(complexity)
+        if (not ret):
+            return None # Error message is printed in getRandom function
+        creatorId = ret[0]
+        imageId = ret[1]
         # Get 3 random images where creator is not the same
         otherImageIds = Connection.getRandomImageIdsOfOtherCreators(creatorId, complexity, guess_image.GAME2NUMBEROFOPTIONS)
         if (dbNotFound(otherImageIds) or len(otherImageIds) != guess_image.GAME2NUMBEROFOPTIONS):
-            print(f'ERROR: generateNewGame1: Cannot get random {guess_image.GAME2NUMBEROFOPTIONS} images of creator other than {creatorId}')
+            print(f'ERROR: {fName}: Cannot get random {guess_image.GAME2NUMBEROFOPTIONS} images of creator other than {creatorId}')
             return None
         userName = queryParams['user']
         userId = Connection.getUserIdByName(userName)
         if (userId == None or dbNotFound(userId)):
-            print(f'ERROR: generateNewGame1: Cannot get user id by name {userName}')
+            print(f'ERROR: {fName}: Cannot get user id by name {userName}')
             return None
         gameType = queryParams['type']
         questionIds = []
@@ -201,7 +219,7 @@ class guess_image:
         # Generate game with user, type(1), correct_answer (correct_image_id), question(image ids)
         ret = Connection.insertGame(userId, gameType, imageId, question, complexity)
         if (ret == None):
-            print(f'ERROR: generateNewGame1: Cannot insert game u={userName},gt={gameType},q={question},ca={imageId}')
+            print(f'ERROR: {fName}: Cannot insert game u={userName},gt={gameType},q={question},ca={imageId}')
             return None
         else:
             # Set current_game
@@ -214,37 +232,40 @@ class guess_image:
     #   gameId - id of new game
     def generateNewGame2(queryParams, gameType = 2):
         fName = guess_image.generateNewGame2.__name__
-        # Check game type
-        if (gameType != 2 and gameType != 3):
-            print(f'ERROR: {fName}: Incorrect game type provided: {gameType}')
-            return None
-        complexity = int(queryParams['complexity'])
-        # Get random image info
-        imageId = Connection.getRandomImageIdsOfAnyCreator(complexity, 1) # get 1 image
-        if (dbNotFound(imageId)):
-            print(f'ERROR: {fName}: Cannot get random image')
-            return None
-        # Get image info
-        imageInfo = Connection.getImageInfoById(imageId)
-        if (dbNotFound(imageInfo)):
-            print(f'ERROR: {fName}: Cannot get random image info (image id = {imageId})')
-            return None
         userName = queryParams['user']
         userId = Connection.getUserIdByName(userName)
         if (userId == None or dbNotFound(userId)):
             print(f'ERROR: {fName}: Cannot get user id by name {userName}')
             return None
+        # Check game type
+        if (gameType != 2 and gameType != 3):
+            print(f'ERROR: {fName}: Incorrect game type provided: {gameType}')
+            return None
+        complexity = int(queryParams['complexity'])
+        if (not complexity):
+            print(f'ERROR: {fName}: Cannot get complexity: {queryParams}')
+            return None
+        complexity = int(complexity)
+        newGameId = guess_image.getRandomCreatorAndImageId(complexity)
+        if (not newGameId):
+            return None # Error message is printed in getRandom function
+        creatorId = newGameId[0]
+        imageId = newGameId[1]
+        # Get image info
+        imageInfo = Connection.getImageInfoById(imageId)
+        if (dbNotFound(imageInfo)):
+            print(f'ERROR: {fName}: Cannot get random image info (image id = {imageId})')
+            return None
         gameType = queryParams['type']
-        creatorId = imageInfo['creatorId']
         # Generate game with user, type(2-3), question(image id), correct_answer (creator_id), complexity
-        ret = Connection.insertGame(userId,gameType,creatorId,imageId,complexity)
-        if (ret == None):
+        newGameId = Connection.insertGame(userId,gameType,creatorId,imageId,complexity)
+        if (newGameId == None):
             print(f'ERROR: {fName}: Cannot insert game u={userName},gt={gameType},q={imageId},ca={creatorId}')
             return None
         else:
             # Set current_game
-            Connection.setCurrentGame(userName, ret)
-        return ret
+            Connection.setCurrentGame(userName, newGameId)
+        return newGameId
 
     # Generate new game with type 3: guess creator of the image - no variants
     # Returns:
