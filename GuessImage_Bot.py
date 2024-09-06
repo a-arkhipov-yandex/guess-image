@@ -2,6 +2,7 @@ import telebot
 from db_lib import *
 from game_lib import *
 from gibot_lib import *
+from log_lib import *
 import requests
 
 
@@ -205,7 +206,7 @@ def gameType1AnswerHanderl(message: types.Message):
         correctAnswerNum = ibotFindNumOfType1Answer(answerOptions, gameInfo['correct_answer'])
     imageIds = guess_image.getQuestionType1Options(gameInfo)
     if (not imageIds):
-        print(f'ERROR: {fName}: wrong format of imageIds = {imageIds}')
+        log(f'{fName}: wrong format of imageIds = {imageIds}', LOG_ERROR)
         bot.send_message(message.from_user.id, "Произошла ошибка. Пожалуйста начните новую игру")
         return
 
@@ -249,17 +250,19 @@ def ibotShowGameResult(bot, message, result, correctAnswer, correctMessage='', c
 # Main section
 #---------------
 def main():
+    initLog()
     Connection.initConnection(test=TESTCONNECTION)
     while(True):
         try:
             bot.infinity_polling()
         except KeyboardInterrupt:
-            print('\nExiting by user request.\n')
+            log('Exiting by user request')
             break
         except requests.exceptions.ReadTimeout as error:
-            print(f'ERROR: main: exception: {error}')
+            log(f'main: exception: {error}', LOG_ERROR)
             continue
     Connection.closeConnection()
+    closeLog()
 
 if __name__ == "__main__":
     main()

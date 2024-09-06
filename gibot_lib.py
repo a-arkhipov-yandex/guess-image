@@ -1,10 +1,10 @@
 import telebot
 from telebot import types
-import re
 from random import shuffle
 
 from db_lib import *
 from game_lib import *
+from log_lib import *
 
 IBOT_COMPLEXITY_ANSWER = 'complexity:'
 IBOT_TYPE1_ANSWER = 'type1answer:'
@@ -101,13 +101,13 @@ def ibotCheckGameTypeNInProgress(bot, message, gameType):
             if (gameInfo['type'] == gameType):
                 return True
         else:
-            print(f'ERROR: {fName}: Cannot get gameInfo from DB: {ret}')
+            log(f'{fName}: Cannot get gameInfo from DB: {ret}', LOG_ERROR)
     return False
 
 # Register new user. Returns: True/False
 def ibotUserRegister(userName):
     if (not dbLibCheckUserName(userName)):
-        print(f'ERROR: ibotUserRegister: Try to register user with wrong format ({userName})')
+        log(f'ibotUserRegister: Try to register user with wrong format ({userName})', LOG_ERROR)
         return False
     # Check if user registered
     userId = Connection.getUserIdByName(userName)
@@ -182,7 +182,7 @@ def ibotShowQuestionType1(bot,message, gameId):
         return
     imageIds = guess_image.getQuestionType1Options(gameInfo)
     if (not imageIds):
-        print(f'ERROR: {ibotShowQuestionType1.__name__}: wrong format of imageIds = {imageIds}')
+        log(f'{ibotShowQuestionType1.__name__}: wrong format of imageIds = {imageIds}', LOG_ERROR)
         bot.send_message(message.from_user.id, "Произошла ошибка. Пожалуйста начните новую игру")
         return
     data = []
@@ -225,7 +225,7 @@ def ibotSendAfterAnswer(bot, message):
 # Modify captures of images with creator, name, year
 def ibotModifyImageCaptures(bot, message, mIds, imageIds):
     if (len(mIds) != len(imageIds)):
-        print(f'ERROR: {ibotModifyImageCaptures.__name__}: len of mIds and imageIds doesnt match')
+        log(f'{ibotModifyImageCaptures.__name__}: len of mIds and imageIds doesnt match', LOG_ERROR)
         return
     for i in range(0, len(mIds)):
         ibotModifyImageCapture(bot, message, mIds[i], imageIds[i])
@@ -238,7 +238,7 @@ def ibotModifyImageCapture(bot, message, messageId, imageId):
         # Edit image capture
         bot.edit_message_caption(chat_id=message.from_user.id, message_id=messageId, caption=caption)
     else:
-        print(f'ERROR: {ibotModifyImageCapture.__name__}: Cannot get image info for {imageId}')
+        log(f'{ibotModifyImageCapture.__name__}: Cannot get image info for {imageId}', LOG_ERROR)
 
 def ibotShowQuestionType2(bot,message, gameId, gameType = 2):
     # Get gameInfo
@@ -309,10 +309,14 @@ def ibotCheckAnswerGameType3(userCreatorName, correctCreatorName):
             if (userAnswerLastWord == correctAnswerLastWord):
                 return True
         else:
-            # Check similarity for last name
-            ret = isStrSimilar(userAnswerLastWord, correctAnswerLastWord)
-            if (ret):
-                return True
+            # Check len difference
+            lAlw = len(userAnswerLastWord)
+            lClw = len(correctAnswerLastWord)
+            if (abs(lAlw-lClw) <= 2):
+                # Check similarity for last name
+                ret = isStrSimilar(userAnswerLastWord, correctAnswerLastWord)
+                if (ret):
+                    return True
 
     # 4. Check Levenstein similarity for full answer
     ret = isStrSimilar(userCreatorName, correctCreatorName)

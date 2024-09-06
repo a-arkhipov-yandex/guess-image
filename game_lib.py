@@ -75,17 +75,17 @@ class guess_image:
         if userName:
             error = showError(f'User "{userName}" not found')
         baseUrl = getBaseUrl()
-        debug(f'Login page invoked')
+        log(f'Login page invoked',LOG_DEBUG)
         return error+showLoginPage(baseUrl)
 
     # Show new user page
     def pageNewUser(queryParams):
-        debug(f'New user page invoked')
+        log(f'New user page invoked',LOG_DEBUG)
         return showNewUserPage()
 
     # Show page to choose game type
     def pageGameType(queryParams):
-        debug(f'Game type page invoked')
+        log(f'Game type page invoked',LOG_DEBUG)
         errMsg = ''
         gameId = queryParams.get('game')
         if (gameId): # 'game' parameter is present - it is incorrect one
@@ -276,7 +276,7 @@ class guess_image:
 
     # New game creation and question page to show
     def pageNewGame(queryParams):
-        debug(f'New game page invoked')
+        log(f'New game page invoked',LOG_DEBUG)
         errMsg = ''
         ret = guess_image.generateNewGame(queryParams)
         if (ret == None):
@@ -306,7 +306,7 @@ class guess_image:
 
     # Show question page
     def pageQuestion(queryParams, errMsg1 = ''):
-        debug(f'Question page invoked')
+        log(f'Question page invoked',LOG_DEBUG)
         # Get game from DB
         gameId = queryParams.get('game')
         gameInfo = Connection.getGameInfoById(gameId)
@@ -334,7 +334,7 @@ class guess_image:
 
     # Show game list page
     def pageGameList(queryParams):
-        debug(f'Game list page invoked')
+        log(f'Game list page invoked',LOG_DEBUG)
         userName = queryParams.get('user')
         userId = Connection.getUserIdByName(userName)
         if (dbNotFound(userId)):

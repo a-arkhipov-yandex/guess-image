@@ -7,6 +7,7 @@ from db_lib import *
 class TestDB:
 
     def testDBConnectoin(self): # Test both test and production connection
+        initLog(printToo=True)
         Connection.initConnection(test=False)
         isInit1 = Connection.isInitialized()
         Connection.closeConnection()
@@ -257,7 +258,7 @@ class TestDB:
                 resGetGameAfterInsert = False
             else:
                 # remove it
-                Connection.deleteGame(id)
+                Connection.deleteGame(id['id'])
                 # check that game is removed
                 id2 = Connection.getGameInfoById(id)
                 resGetGameAfterDelete = True
@@ -595,6 +596,7 @@ class TestDB:
 
     def testCloseConnection(self):
         Connection.closeConnection()
+        closeLog()
         isInit = Connection.isInitialized()
         assert(not isInit)
 

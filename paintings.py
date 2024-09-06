@@ -6,11 +6,13 @@ from img_fs_lib import *
 from img_ui_lib import *
 from game_lib import *
 from Levenshtein import distance
+from log_lib import *
 
 #===============
 # Main section
 #---------------
 def main():
+    initLog(printToo=True)
     # Need to read dir and fill out paintings data
     imgData = getImgs()
     creators = imgData[0]
@@ -20,12 +22,16 @@ def main():
     orientations = imgData[4]
 
     crNum = len(set(creators))
-    debug(f"Total number of creators: {crNum}")
+    log(f"Total number of creators: {crNum}",LOG_DEBUG)
 
     #checkUrls(creators, titles, years)
 
     #bulkUpload(creators, titles, years)
 
+
+    print(f'logFile={GuessImageLog.logFileName} | logLevel={GuessImageLog.logCurrentLevel} | logHandle={GuessImageLog.logHandle}')
+    closeLog()
+    exit(0)
     #Connection.initConnection(test=False)
     if (not Connection.initConnection(test=True)):
         print('ERROR: Cannot init connection')

@@ -1,12 +1,13 @@
 from os import path
 from os import getenv, environ
+import shutil
+from datetime import datetime as dt
 from Levenshtein import distance
 from dotenv import load_dotenv
 import re
 import csv
+from log_lib import *
 
-
-DEBUG = False
 EXT = '.jpg'
 BASE_URL = 'https://functions.yandexcloud.net/d4ei6a2doh55olhcagsm/'
 
@@ -111,15 +112,15 @@ def readCreatorsCSV():
     for creator in creators:
         id = creator.get('id')
         if (not id):
-            print('ERROR: no ID in CSV file: {creator}')
+            log(f'No ID in CSV file: {creator}',LOG_ERROR)
             continue
         name = creator.get('name')
         if (not name):
-            print('ERROR: no Name in CSV file: {creator}')
+            log(f'No Name in CSV file: {creator}',LOG_ERROR)
             continue
         complexity = creator.get('complexity')
         if (not complexity):
-            print('ERROR: no Complexity in CSV file: {creator}')
+            log(f'No Complexity in CSV file: {creator}',LOG_ERROR)
             continue
 
         newCreator = {}
@@ -155,10 +156,6 @@ def isWeb():
     if (environ.get('WEB')):
         return True
     return False
-
-def debug(str):
-    if (DEBUG):
-        print(str)
 
 def checkUserNameFormat(user):
     ret = False
@@ -228,21 +225,21 @@ def getYear(rawYear):
         # Check that this is real year
         retYear = myInt(year)
         if not retYear:
-            print(f'ERROR: problem with int conversion - {year}')
+            log(f'Problem with int conversion - {year}',LOG_ERROR)
             return False
     elif (lYear == 9):
         years = year.split('-')
         if (len(years) != 2):
-            print(f'ERROR: cannot split years - {year}')
+            log(f'Cannot split years - {year}',LOG_ERROR)
             return False
         year1 = myInt(years[0])
         year2 = myInt(years[1])
         if ((not year1) or (not year2)):
-            print(f'Error: problem with int conversion 2 - {year}')
+            log(f'Problem with int conversion 2 - {year}',LOG_ERROR)
             return False
         retYear = int((year2+year1)/2) # return average
     
     if ((retYear < 1000) or (retYear > 2030)):
-        print(f'ERROR: Year is out of range: {rawYear}')
+        log(f'Year is out of range: {rawYear}',LOG_ERROR)
         retYear = 0
     return retYear 

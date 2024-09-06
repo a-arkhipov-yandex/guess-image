@@ -14,6 +14,7 @@ class TestGame:
     finishedGameType3Id = None
 
     def testPreparation(self):
+        initLog(printToo=True)
         # Create connection
         if (not Connection.isInitialized()):
             Connection.initConnection(test=True)
@@ -237,7 +238,7 @@ class TestGame:
             ret2 = Connection.getGameInfoById(ret)
             if (dbFound(ret2)):
                 # Delete game
-                Connection.deleteGame(ret2)
+                Connection.deleteGame(ret2['id'])
                 resCheckInsertedGame = True
         assert(resNewGame == expected_result)
         assert(resCheckInsertedGame == expected_result)
@@ -457,9 +458,9 @@ class TestGame:
 
         # Delete finished games
         resDeleteGame4 = Connection.deleteGame(TestGame.finishedGameType1Id)
-        assert(resDeleteGame3)
-        resDeleteGame5 = Connection.deleteGame(TestGame.finishedGameType2Id)
         assert(resDeleteGame4)
+        resDeleteGame5 = Connection.deleteGame(TestGame.finishedGameType2Id)
+        assert(resDeleteGame5)
         resDeleteGame6 = Connection.deleteGame(TestGame.finishedGameType3Id)
         assert(resDeleteGame6)
         # Delete test user - do not delete user as it has games left
@@ -469,3 +470,4 @@ class TestGame:
         Connection.closeConnection()
         isInit = Connection.isInitialized()
         assert(not isInit)
+        closeLog()

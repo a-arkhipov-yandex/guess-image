@@ -4,6 +4,10 @@ import pytest
 
 from guess_image_lib import *
 
+def testPrepare():
+    initLog()
+    assert(True)
+
 @pytest.mark.parametrize(
     "i, expected_result",
     [
@@ -77,4 +81,6 @@ def testGetYear(year, expected_result):
     ret = getYear(year)
     assert(ret == expected_result)
 
-    
+def testCleanup():
+    closeLog()
+    assert(True)
