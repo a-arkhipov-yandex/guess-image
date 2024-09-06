@@ -185,6 +185,7 @@ def gameType3AnswerHanderl(bot, message: types.Message):
 
 @bot.callback_query_handler(func=lambda message: re.match(fr'^{IBOT_TYPE1_ANSWER}\d+$', message.data))
 def gameType1AnswerHanderl(message: types.Message):
+    fName = gameType1AnswerHanderl.__name__
     userName = message.from_user.username
     # Check user name format first
     ret = ibotCheckUserName(bot, message)
@@ -204,7 +205,7 @@ def gameType1AnswerHanderl(message: types.Message):
         correctAnswerNum = ibotFindNumOfType1Answer(answerOptions, gameInfo['correct_answer'])
     imageIds = guess_image.getQuestionType1Options(gameInfo)
     if (not imageIds):
-        print(f'ERROR: {ibotShowQuestionType1.__name__}: wrong format of imageIds = {imageIds}')
+        print(f'ERROR: {fName}: wrong format of imageIds = {imageIds}')
         bot.send_message(message.from_user.id, "Произошла ошибка. Пожалуйста начните новую игру")
         return
 

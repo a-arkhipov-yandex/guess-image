@@ -107,7 +107,7 @@ def ibotCheckGameTypeNInProgress(bot, message, gameType):
 # Register new user. Returns: True/False
 def ibotUserRegister(userName):
     if (not dbLibCheckUserName(userName)):
-        print(f'ERROR: Try to register user with wrong format ({userName})')
+        print(f'ERROR: ibotUserRegister: Try to register user with wrong format ({userName})')
         return False
     # Check if user registered
     userId = Connection.getUserIdByName(userName)
@@ -304,7 +304,6 @@ def ibotCheckAnswerGameType3(userCreatorName, correctCreatorName):
         correctAnswerWords = correctCreatorName.split(' ')
         userAnswerLastWord = userAnswerWords[0]
         correctAnswerLastWord = correctAnswerWords[-1]
-        print(f'User last word: {userAnswerLastWord} | Correct last word: {correctAnswerLastWord}')
         # If correct last word len < 3 - only exact answer
         if (len(correctAnswerLastWord) <= 3):
             if (userAnswerLastWord == correctAnswerLastWord):

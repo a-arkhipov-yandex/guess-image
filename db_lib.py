@@ -502,7 +502,7 @@ class Connection:
     def deleteUser(id):
         ret = False
         if (not Connection.isInitialized()):
-            print("Error: cannot delete user - connection is not initialized")
+            print("ERROR: cannot delete user - connection is not initialized")
             return ret
         conn = Connection.getConnection()
         with conn.cursor() as cur:
@@ -518,11 +518,11 @@ class Connection:
     # Insert new user in DB. Returns True is success or False otherwise
     def insertUser(userName, gameType=None, complexity=None):
         if (not Connection.isInitialized()):
-            print("Error: cannot insert user - connection is not initialized")
+            print("ERROR: cannot insert user - connection is not initialized")
             return False
         ret = dbLibCheckUserName(userName)
         if (not ret):
-            print("Error: cannot insert user -  invalid name format")
+            print("ERROR: cannot insert user -  invalid name format")
             return False
         if ((complexity == None) or (not dbLibCheckGameComplexity(complexity))):
             complexity = Connection.getDefaultComplexity()
@@ -535,7 +535,7 @@ class Connection:
         # Check for duplicates
         retUser = Connection.getUserIdByName(userName)
         if (retUser == None): # error with DB
-            print(f'Error: cannot get user from DB: {userName}')
+            print(f'ERROR: cannot get user from DB: {userName}')
             return False
         if (dbNotFound(retUser)):
             with conn.cursor() as cur:
@@ -554,7 +554,7 @@ class Connection:
     # Delete creator - returns nothing
     def deleteCreator(id):
         if (not Connection.isInitialized()):
-            print("Error: cannot delete creator - connection is not initialized")
+            print("ERROR: cannot delete creator - connection is not initialized")
             return
         conn = Connection.getConnection()
         with conn.cursor() as cur:
@@ -568,13 +568,13 @@ class Connection:
     # Insert new creator. Returns True is success or False otherwise
     def insertCreator(creator):
         if (not Connection.isInitialized()):
-            print("Error: cannot insert creator - connection is not initialized")
+            print("ERROR: cannot insert creator - connection is not initialized")
             return False
         ret = False
         # Check for duplicates
         retCreator = Connection.getCreatorIdByName(creator)
         if (retCreator == None): # error with DB
-            print('Error: cannot get creator from DB')
+            print(f'ERROR: cannot get creator from DB: {creator}')
             return False
         if (dbNotFound(retCreator)):
             conn = Connection.getConnection()
@@ -601,7 +601,7 @@ class Connection:
     # Delete image - returns nothing
     def deleteImage(id):
         if (not Connection.isInitialized()):
-            print("Error: cannot delete image - connection is not initialized")
+            print("ERROR: cannot delete image - connection is not initialized")
             return
         conn = Connection.getConnection()
         with conn.cursor() as cur:
@@ -615,13 +615,13 @@ class Connection:
     # Insert image in DB. Returns True is success or False otherwise
     def insertImage(creatorId, image, year, intYear, orientation):
         if (not Connection.isInitialized()):
-            print("Error: cannot insert image - connection is not initialized")
+            print("ERROR: cannot insert image - connection is not initialized")
             return False
         # Check for duplicates
         ret = False
         id = Connection.getImageIdByCreatorId(creatorId, image, year)
         if (id == None):
-            print(f'Error: cannot insert image {creatorId} - {image} - {year}: DB issue')
+            print(f'ERROR: cannot insert image {creatorId} - {image} - {year}: DB issue')
             return None
         if (dbNotFound(id)):
             conn = Connection.getConnection()
@@ -641,7 +641,7 @@ class Connection:
     # Bulk image insertion
     def bulkImageInsersion(mCreators):
         if (not Connection.isInitialized()):
-            print("Error: cannot bulk image insert - connection is not initialized")
+            print("ERROR: cannot bulk image insert - connection is not initialized")
             return
         # Pass through all the creators
         for creator in mCreators:
@@ -673,7 +673,7 @@ class Connection:
     #   None - if failed connection or no such image
     def getImageUrlById(id):
         if (not Connection.isInitialized()):
-            print("Error: cannot get image url by id - connection is not initialized")
+            print("ERROR: cannot get image url by id - connection is not initialized")
             return None
         image = Connection.getImageInfoById(id)
         if (image == None):
@@ -713,11 +713,11 @@ class Connection:
     # Update image orientation. Returns nothing
     def updateImageOrientation(creator, image, year, orientation):
         if (not Connection.isInitialized()):
-            print("Error: cannot update image orientation - connection is not initialized")
+            print("ERROR: cannot update image orientation - connection is not initialized")
             return
         id = Connection.getImageIdByCreatorName(creator, image, year)
         if (id == None):
-            print(f'Error: cannot update image {creator} - {image} - {year} orientation: DB issue')
+            print(f'ERROR: cannot update image {creator} - {image} - {year} orientation: DB issue')
             return
         if (dbFound(id)):
             conn = Connection.getConnection()
@@ -735,7 +735,7 @@ class Connection:
     def deleteGame(id):
         ret = False
         if (not Connection.isInitialized()):
-            print("Error: cannot delete game - connection is not initialized")
+            print("ERROR: cannot delete game - connection is not initialized")
             return ret
         conn = Connection.getConnection()
         with conn.cursor() as cur:
@@ -778,7 +778,7 @@ class Connection:
             return None
 
         if (not Connection.isInitialized()):
-            print(f"Error: cannot insert game for user {user_id}- connection is not initialized")
+            print(f"ERROR: cannot insert game for user {user_id}- connection is not initialized")
             return None
         ret = None
         conn = Connection.getConnection()
@@ -1309,7 +1309,7 @@ class Connection:
     # Temp Helper
     def dbTmpHelper():
         if (not Connection.isInitialized()):
-            print("Error: connection is not initialized")
+            print("ERROR: connection is not initialized")
             return
         conn = Connection.getConnection()
         with conn.cursor() as cur:

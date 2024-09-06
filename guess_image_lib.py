@@ -228,12 +228,12 @@ def getYear(rawYear):
         # Check that this is real year
         retYear = myInt(year)
         if not retYear:
-            print(f'Error: problem with int conversion - {year}')
+            print(f'ERROR: problem with int conversion - {year}')
             return False
     elif (lYear == 9):
         years = year.split('-')
         if (len(years) != 2):
-            print(f'Error: cannot split years - {year}')
+            print(f'ERROR: cannot split years - {year}')
             return False
         year1 = myInt(years[0])
         year2 = myInt(years[1])
