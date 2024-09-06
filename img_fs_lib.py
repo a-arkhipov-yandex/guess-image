@@ -19,7 +19,7 @@ def getImgs():
             files.append(f1)
 
     numFiles = len(files)
-    debug(f'Number of files: {numFiles}')
+    log(f'Number of files: {numFiles}')
 
     creators = []
     titles = []

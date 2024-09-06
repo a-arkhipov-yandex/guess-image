@@ -23,6 +23,7 @@ def main():
 
     crNum = len(set(creators))
     log(f"Total number of creators: {crNum}",LOG_DEBUG)
+    print('123456789'[-4:])
 
     #checkUrls(creators, titles, years)
 

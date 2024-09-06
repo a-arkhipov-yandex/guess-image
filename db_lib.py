@@ -1279,7 +1279,7 @@ class Connection:
             query = 'update users set game_complexity=%(c)s where id = %(uId)s'
             try:
                 cur.execute(query,{'c':complexity,'uId':userId})
-                log(f'Updated game type: (user={userName} | gameType = {complexity})')
+                log(f'Updated complexity: (user={userName} | complexity = {complexity})')
                 ret = True
             except (Exception, psycopg2.DatabaseError) as error:
                 log(f'{fName}: Failed update complexity (complexity = {complexity}, user={userName}): {error}')

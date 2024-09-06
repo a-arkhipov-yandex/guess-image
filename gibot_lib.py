@@ -323,7 +323,7 @@ def ibotCheckAnswerGameType3(userCreatorName, correctCreatorName):
                     return True
 
     if (lU > 5):
-        correctAnswer = correctCreatorName[-lU]
+        correctAnswer = correctCreatorName[-lU:]
         ret = isStrSimilar(userCreatorName, correctAnswer)
         if (ret):
             log(f'Last part of answer similarity (similarity={ret}): {userCreatorName} | {correctAnswer}',LOG_DEBUG)
