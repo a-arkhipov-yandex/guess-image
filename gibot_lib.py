@@ -289,12 +289,14 @@ def ibotCheckAnswerGameType3(userCreatorName, correctCreatorName):
 
     # 0. Full match
     if (userCreatorName == correctCreatorName):
+        log(f'Full match: {userCreatorName} == {correctCreatorName}',LOG_DEBUG)
         return True
 
     lU = len(userCreatorName)
     lC = len(correctCreatorName)
     # 2. Check length of userAnswer
     if (lU > lC):
+        log(f'User len > correct len: {lU} > {lC}',LOG_DEBUG)
         return False
     
     # 3. Check if only one word in answer (probably last name)
@@ -307,6 +309,7 @@ def ibotCheckAnswerGameType3(userCreatorName, correctCreatorName):
         # If correct last word len < 3 - only exact answer
         if (len(correctAnswerLastWord) <= 3):
             if (userAnswerLastWord == correctAnswerLastWord):
+                log(f'Full last word match (len <=3): {userAnswerLastWord} == {correctAnswerLastWord}',LOG_DEBUG)
                 return True
         else:
             # Check len difference
@@ -316,11 +319,20 @@ def ibotCheckAnswerGameType3(userCreatorName, correctCreatorName):
                 # Check similarity for last name
                 ret = isStrSimilar(userAnswerLastWord, correctAnswerLastWord)
                 if (ret):
+                    log(f'Last word similarity match (similarity={ret}): {userAnswerLastWord} | {correctAnswerLastWord}',LOG_DEBUG)
                     return True
+
+    if (lU > 5):
+        correctAnswer = correctCreatorName[-lU]
+        ret = isStrSimilar(userCreatorName, correctAnswer)
+        if (ret):
+            log(f'Last part of answer similarity (similarity={ret}): {userCreatorName} | {correctAnswer}',LOG_DEBUG)
+            return True
 
     # 4. Check Levenstein similarity for full answer
     ret = isStrSimilar(userCreatorName, correctCreatorName)
     if (ret):
+        log(f'Full answer similarity (similarity={ret}: {userCreatorName} | {correctCreatorName}',LOG_DEBUG)
         return True
 
     return ret
