@@ -7,6 +7,7 @@ from datetime import datetime as dt
 
 ENV_LOGFILE = 'LOGFILE'
 ENV_LOGLEVEL = 'LOGLEVEL'
+ENV_PRINTTOO = 'PRINTTOO'
 
 DEFAULT_LOGFILE = '/tmp/guess-image.log'
 
@@ -49,6 +50,9 @@ def initLog(logFile=None, printToo=False):
         ret = LOG_LEVELS.get(logLevel)
         if (ret): # ENV log level exists
             GuessImageLog.logCurrentLevel = logLevel
+    printTooEnv = getenv(ENV_PRINTTOO)
+    if (printTooEnv and printTooEnv == 'True'):
+        printToo = True
     GuessImageLog.logFileRotation(logFile)
     # Open log file for writing
     try:

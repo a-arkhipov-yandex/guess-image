@@ -64,6 +64,7 @@ def ibotGetUserSettings(userName):
 # Get welcome message
 def ibotGetWelcomeMessage(userName):
     settings = ibotGetUserSettings(userName)
+    print(settings)
     ret = f'''
 Добро пожаловать, {userName}!
    Это игра "Угадай картину".
@@ -72,9 +73,17 @@ def ibotGetWelcomeMessage(userName):
     '''
     gameTypes = Connection.getGameTypes()
     Complexities = Connection.getComplexities()
-    ret = ret + f'''Выбранный тип игры: "{gameTypes[settings["game_type"]][1]}"
+    gameTypeTxt = ''
+    for gt in gameTypes:
+        if (gt[0] == settings["game_type"]):
+            gameTypeTxt = gt[1]
+    ret = ret + f'''Выбранный тип игры: "{gameTypeTxt}"
     '''
-    ret = ret + f'''Выбраннпая сложность: "{Complexities[settings["game_type"]][1]}"
+    complexityTxt = ''
+    for c in Complexities:
+        if (c[0] == settings["complexity"]):
+            complexityTxt = c[1]
+    ret = ret + f'''Выбранная сложность: "{complexityTxt}"
     '''
     ret = ret + f'''
 Удачи тебе!!!
