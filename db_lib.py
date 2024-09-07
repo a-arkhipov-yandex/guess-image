@@ -41,6 +41,10 @@ def dbLibCheckUserId(user_id):
         ret = True
     return ret
 
+# Check if gender of creator is wonam
+def dbIsWoman(gender):
+    return (gender == 2)
+
 # Check user name (can be string with '[a-zA-Z][0-9a-zA-Z]')
 def dbLibCheckUserName(user_name):
     if (user_name == None):
@@ -146,6 +150,37 @@ def dbGetGameInfo(queryResult):
     game['finished'] = queryResult[8]
     game['complexity'] = int(queryResult[9])
     return game
+
+# Make useful map for creator
+def dbGetCreatorInfo(queryResult):
+    creator = {}
+    if (len(queryResult) != 7):
+        return creator
+    creator['id'] = int(queryResult[0])
+    creator['name'] = queryResult[1]
+    creator['gender'] = queryResult[2]
+    if (creator['gender']):
+        creator['gender'] = int(creator['gender'])
+    creator['country'] = queryResult[3]
+    creator['birth'] = queryResult[4]
+    if (creator['birth']):
+        creator['birth'] = int(creator['birth'])
+    creator['death'] = queryResult[5]
+    if (creator['death']):
+        creator['death'] = int(creator['death'])
+    creator['complexity'] = int(queryResult[6])
+    return creator
+
+# Make useful map for image
+def dbGetImageInfo(queryResult):
+    imageInfo = {}
+    imageInfo['creatorId'] = int(queryResult[0])
+    imageInfo['creatorName'] = queryResult[1]
+    imageInfo['imageName'] = queryResult[2]
+    imageInfo['intYear'] = int(queryResult[3])
+    imageInfo['yearStr'] = queryResult[4]
+    imageInfo['orientation'] = int(queryResult[5])
+    return imageInfo
 
 # Make map: creator -> [title, year, intYear, orientation]
 def getImageCreatorMap(creators, titles, years, intYears, orientations):
@@ -363,22 +398,7 @@ class Connection:
         query = "SELECT id,name,gender,country,birth,death,complexity FROM creators WHERE id =%(id)s"
         ret = Connection.executeQuery(query,{'id':creatorId})
         if (dbFound(ret)):
-            creatorInfo = {}
-            creatorInfo['id'] = int(ret[0])
-            creatorInfo['name'] = ret[1]
-            creatorInfo['gender'] = ret[2]
-            if (ret[2]):
-                creatorInfo['gender'] = int(ret[2])
-            creatorInfo['country'] = ret[3]
-            creatorInfo['birth'] = ret[4]
-            if (ret[4]):
-                creatorInfo['birth'] = int(ret[4])
-            creatorInfo['death'] = ret[5]
-            if (ret[5]):
-                creatorInfo['death'] = int(ret[5])
-            creatorInfo['complexity'] = ret[6]
-            if (ret[6]):
-                creatorInfo['complexity'] = int(ret[6])
+            creatorInfo = dbGetCreatorInfo(ret)
             ret = creatorInfo
         return ret
 
@@ -596,8 +616,42 @@ class Connection:
     # Bulk creators insertion
     def bulkCreatorInsert(creators):
         creatorsSet = set(creators)
-        for creator in creatorsSet:
-            Connection.insertCreator(creator)
+
+        # Get all creators from DB
+        creators = Connection.getAllCreatorsInfo()
+        if (dbFound(creators)):
+            # Create set of creators in DB - creatorSetDB
+            creatorsSetDb = set()
+            for c in creators:
+                creatorsSetDb.add(c['name'])
+            # For each creator in creatorSet check that it is in creatorSetDB
+            for c in creatorsSet:
+                if (c not in creatorsSetDb):
+                    # Insert new creator
+                    Connection.insertCreator(c)
+        else:
+            log(f'No creators found in DB: {creators}',LOG_ERROR)
+
+    # Get all creators from DB
+    # Returns:
+    #   [[creatorInfo],...] - array of creators info
+    #   None - issue with DB
+    def getAllCreatorsInfo():
+        fName = Connection.getAllCreatorsInfo.__name__
+        if (not Connection.isInitialized()):
+            log(f"{fName}: Cannot get all creators - connection is not initialized",LOG_ERROR)
+            return None
+        creators = []
+        query = "select id,name,gender,country,birth,death,complexity from creators"
+        ret = Connection.executeQuery(query,{},True)
+        if (dbFound(ret)):
+            for c in ret:
+                # Fill out creators info
+                creator = dbGetCreatorInfo(c)
+                creators.append(creator)
+        else:
+            return None
+        return creators
 
     # Delete image - returns nothing
     def deleteImage(id):
@@ -655,6 +709,9 @@ class Connection:
                 log(f'No creator in DB: {creator}',LOG_ERROR)
                 continue
 
+            # Get all imsages for creator
+            imagesDB = Connection.getAllImagesOfCreator(creatorId)
+
             images = mCreators[creator]
             # Pass through all the images of the creator
             for imageData in images:
@@ -663,8 +720,38 @@ class Connection:
                 intYear = getIntYearFromData(imageData)
                 orientation = getOrientationFromData(imageData)
 
-                # Insert tiles, year, intYear
-                Connection.insertImage(creatorId, image, year, intYear, orientation)
+                if (not Connection.findImageByTitleAndYear(imagesDB, image, year)):
+                    # Insert tiles, year, intYear, orientation
+                    Connection.insertImage(creatorId, image, year, intYear, orientation)
+
+    def findImageByTitleAndYear(imagesDB, title, year):
+        if (imagesDB == None): # No images for creator - this is the first one
+            return False
+        for imageInfo in imagesDB:
+            if (imageInfo['imageName'] == title and imageInfo['yearStr'] == year):
+                return True
+        return False
+
+    # Get all images of the creator
+    # Returns:
+    #   ['imageInfo1',...] - array of image info
+    #   None - in case of error
+    def getAllImagesOfCreator(creatorId):
+        fName = Connection.getAllImagesOfCreator.__name__
+        if (not Connection.isInitialized()):
+            log(f"{fName}: Cannot get all images of creator - connection is not initialized",LOG_ERROR)
+            return None
+        images = []
+        query = f"select i.creator,c.name,i.name,i.year,i.year_str,i.orientation from images as i join creators as c on i.creator = c.id where c.id = %(id)s"
+        ret = Connection.executeQuery(query,{'id':creatorId},True)
+        if (dbFound(ret)):
+            for i in ret:
+                # Fill out creators info
+                image = dbGetImageInfo(i)
+                images.append(image)
+        else:
+            return None
+        return images
 
     # Get URL by image id
     # Returns:
@@ -700,13 +787,7 @@ class Connection:
         query = f"select i.creator,c.name,i.name,i.year,i.year_str,i.orientation from images as i join creators as c on i.creator = c.id where i.id = %(id)s"
         ret = Connection.executeQuery(query,{'id':id})
         if (dbFound(ret)):
-            imageInfo = {}
-            imageInfo['creatorId'] = int(ret[0])
-            imageInfo['creatorName'] = ret[1]
-            imageInfo['imageName'] = ret[2]
-            imageInfo['intYear'] = int(ret[3])
-            imageInfo['yearStr'] = ret[4]
-            imageInfo['orientation'] = int(ret[5])
+            imageInfo = dbGetImageInfo(ret)
             ret = imageInfo
         return ret
 

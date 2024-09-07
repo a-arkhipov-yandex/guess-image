@@ -1,6 +1,5 @@
 from os import path
 from os import getenv, environ
-import shutil
 from datetime import datetime as dt
 from Levenshtein import distance
 from dotenv import load_dotenv

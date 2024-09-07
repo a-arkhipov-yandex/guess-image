@@ -47,6 +47,10 @@ def startHandler(message: types.Message):
 def settingsHandler(message: types.Message):
     settings(message)
 
+@bot.callback_query_handler(func=lambda message: message.data == CMD_HELP)
+def helpHandler(message: types.Message):
+    bot.send_message(message.from_user.id, ibotGetHelpMessage(message.from_user.username))
+
 def settings(message: types.Message):
     ibotRequestComplexity(bot, message)
 
@@ -149,7 +153,12 @@ def gameType2AnswerHanderl(message: types.Message):
     # Get correct answer
     correctAnswerId = gameInfo.get('correct_answer')
     correctAnswer = Connection.getCreatorNameById(correctAnswerId)
-    correctMessage = f'Эту картину написал {correctAnswer}.'
+    creatorInfo = Connection.getCreatorInfoById(correctAnswerId)
+    writeForm = ""
+    if (dbFound(creatorInfo)):
+        if (dbIsWoman(creatorInfo['gender'])):
+            writeForm = 'а'
+    correctMessage = f'Эту картину написал{writeForm} {correctAnswer}.'
     ibotShowGameResult(bot=bot, message=message, result=result, correctAnswer=correctAnswer, correctMessage=correctMessage)
 
 def gameType3AnswerHanderl(bot, message: types.Message):
@@ -181,7 +190,12 @@ def gameType3AnswerHanderl(bot, message: types.Message):
     # Get game info to update result
     gameInfo = Connection.getGameInfoById(gameId)
     result = gameInfo['result']
-    correctMessage = f'Эту картину написал {correctAnswer}.'
+    creatorInfo = Connection.getCreatorInfoById(correctAnswerId)
+    writeForm = ""
+    if (dbFound(creatorInfo)):
+        if (dbIsWoman(creatorInfo['gender'])):
+            writeForm = 'а'
+    correctMessage = f'Эту картину написал{writeForm} {correctAnswer}.'
     ibotShowGameResult(bot=bot, message=message, result=result, correctAnswer=correctAnswer, correctMessage=correctMessage)
 
 @bot.callback_query_handler(func=lambda message: re.match(fr'^{IBOT_TYPE1_ANSWER}\d+$', message.data))

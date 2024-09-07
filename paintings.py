@@ -23,37 +23,21 @@ def main():
 
     crNum = len(set(creators))
     log(f"Total number of creators: {crNum}",LOG_DEBUG)
-    print('123456789'[-4:])
 
     #checkUrls(creators, titles, years)
 
-    #bulkUpload(creators, titles, years)
+    bulkUpload(creators, titles, years)
 
-
-    print(f'logFile={GuessImageLog.logFileName} | logLevel={GuessImageLog.logCurrentLevel} | logHandle={GuessImageLog.logHandle}')
-    closeLog()
-    exit(0)
     #Connection.initConnection(test=False)
     if (not Connection.initConnection(test=True)):
         print('ERROR: Cannot init connection')
         exit()
-    #gameUnfinishedId = Connection.getGameInfoById(153)
-    #print(gameUnfinishedId)
-
-    string1 = "пабло пикассо"
-    string2 = "пабло пикасо"
-
-
-    ret = ibotCheckAnswerGameType3('перо', 'перов')
-    #ret = ibotCheckAnswerGameType3('айвазовский', 'Иван Айвазовский')
-    print(ret)
-    print(isStrSimilar('винча', 'винчи'))
 
     #Connection.clearAllCurrentGames()
 
     #Connection.updateCreatorsFromCSV()
 
-    #Connection.updateDB(creators, titles, years, intYears, orientations)
+    Connection.updateDB(creators, titles, years, intYears, orientations)
 
     #print(ibotCheckAnswerGameType3('клод моне', 'клод моне'))
 

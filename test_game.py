@@ -32,7 +32,7 @@ class TestGame:
         gameData = Connection.getCurrentGameData(TestGame.testUserName)
         assert(gameType1Id)
         assert(currentGame == gameType1Id)
-        assert(gameData != None)
+        assert(gameData == None) # No game data if not bot generated
         TestGame.unfinishedGameType1Id = gameType1Id
         # Create unfinished game type 2
         params = {'user':TestGame.testUserName,'type':2,'complexity':2}

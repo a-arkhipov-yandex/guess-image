@@ -594,6 +594,30 @@ class TestDB:
         assert(gameType2 == newGameType)
         assert(gameComplexity2 == newGameComplexity)
 
+    def testBulkCreatorInsert(self):
+        noneexistingСreatorName = 'Noneexistingcreatorfordelete'
+        creators = [noneexistingСreatorName]
+        cIdBeforeInsert = Connection.getCreatorIdByName(noneexistingСreatorName)
+        resCIdBeforeInsert = (dbFound(cIdBeforeInsert))        
+        Connection.bulkCreatorInsert(creators)
+        cIdAfterInsert = Connection.getCreatorIdByName(noneexistingСreatorName)
+        resCIdAfterInsert = (dbFound(cIdAfterInsert))
+        Connection.deleteCreator(cIdAfterInsert)
+        cIdAfterDelete = Connection.getCreatorIdByName(noneexistingСreatorName)
+        resCIdAfterDelete = (dbFound(cIdAfterDelete))
+        assert(resCIdBeforeInsert != True)
+        assert(resCIdAfterInsert)
+        assert(resCIdAfterDelete != True)
+
+    def testGetAllImagesOfCreator(self):
+        noneexistingСreatorId = 1000000
+        existingCreatorId = 2 # Van Gogh
+        resNonexistingCreator = Connection.getAllImagesOfCreator(noneexistingСreatorId)
+        ret = Connection.getAllImagesOfCreator(existingCreatorId)
+        resExistingCreator = (dbFound(ret))
+        assert(resNonexistingCreator == None)
+        assert(resExistingCreator)
+
     def testCloseConnection(self):
         Connection.closeConnection()
         closeLog()

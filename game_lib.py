@@ -293,7 +293,12 @@ class guess_image:
         if gameType == 1: # Type = 1
             imageInfo = Connection.getImageInfoById(gameInfo['correct_answer'])
             if (dbFound(imageInfo)):
-                textQ = f"Какую картину написал \"{imageInfo['creatorName']}\" в {imageInfo['yearStr']}?"
+                creatorInfo = Connection.getCreatorInfoById(imageInfo['creatorId'])
+                writeForm = ""
+                if (dbFound(creatorInfo)):
+                    if (dbIsWoman(creatorInfo['gender'])):
+                        writeForm = 'а'
+                textQ = f"Какую картину написал{writeForm} \"{imageInfo['creatorName']}\" в {imageInfo['yearStr']}?"
         elif (gameType == 2):
             imageInfo = Connection.getImageInfoById(gameInfo['question'])
             if (dbFound(imageInfo)):
