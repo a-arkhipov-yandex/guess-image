@@ -11,3 +11,6 @@ ExecReload=/bin/kill -s HUP $MAINPID
 TimeoutSec=5
 RestartSec=5
 Restart=always
+
+[Install]
+WantedBy=multi-user.target
