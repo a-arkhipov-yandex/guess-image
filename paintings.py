@@ -26,7 +26,7 @@ def main():
 
     #checkUrls(creators, titles, years)
 
-    bulkUpload(creators, titles, years)
+    #bulkUpload(creators, titles, years)
 
     #Connection.initConnection(test=False)
     if (not Connection.initConnection(test=True)):
@@ -37,7 +37,7 @@ def main():
 
     #Connection.updateCreatorsFromCSV()
 
-    Connection.updateDB(creators, titles, years, intYears, orientations)
+    #Connection.updateDB(creators, titles, years, intYears, orientations)
 
     #print(ibotCheckAnswerGameType3('клод моне', 'клод моне'))
 
