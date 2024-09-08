@@ -33,6 +33,13 @@ def main():
         print('ERROR: Cannot init connection')
         exit()
 
+    import pytz
+    #print(pytz.all_timezones)
+    from zoneinfo import ZoneInfo
+    tzinfo=ZoneInfo('Europe/Moscow')
+    from datetime import datetime as dt
+    print(dt.now(tzinfo))
+
     #Connection.clearAllCurrentGames()
 
     #Connection.updateCreatorsFromCSV()

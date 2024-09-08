@@ -4,12 +4,15 @@ from os import getenv, environ
 from dotenv import load_dotenv
 import shutil
 from datetime import datetime as dt
+from zoneinfo import ZoneInfo
 
 ENV_LOGFILE = 'LOGFILE'
+ENV_LOGSTARTFILE = 'LOGSTARTFILE'
 ENV_LOGLEVEL = 'LOGLEVEL'
 ENV_PRINTTOO = 'PRINTTOO'
 
 DEFAULT_LOGFILE = '/tmp/guess-image.log'
+DEFAULT_LOGSTARTFILE = '/tmp/guess-image-starts.log'
 
 LOG_ERROR = 'ERROR'
 LOG_INFO = 'INFO'
@@ -35,6 +38,22 @@ class GuessImageLog:
             # Copy existing file and add '.bak' at the end
             shutil.copyfile(logFile, logFile + '.bak')
 
+    # Log startup attempt
+    def logStart():
+        load_dotenv()
+        # Read logStartFile from env
+        logFile = getenv(ENV_LOGSTARTFILE)
+        if (not logFile):
+            logFile = DEFAULT_LOGSTARTFILE
+        try:
+            f = open(logFile, 'a')
+            tzinfo=ZoneInfo('Europe/Moscow')
+            startTime = dt.now(tzinfo).strftime("%d-%m-%Y %H:%M:%S")
+            f.write(f'{startTime}: GuessImage_bot started'+"\n")
+        except Exception as error:
+            log(f'Cannot open "{logFile}": {error}', LOG_ERROR)
+        f.close()
+
 def initLog(logFile=None, printToo=False):
     load_dotenv()
     if (not logFile):
@@ -50,6 +69,7 @@ def initLog(logFile=None, printToo=False):
         ret = LOG_LEVELS.get(logLevel)
         if (ret): # ENV log level exists
             GuessImageLog.logCurrentLevel = logLevel
+    # Check if need to printout messages
     printTooEnv = getenv(ENV_PRINTTOO)
     if (printTooEnv and printTooEnv == 'True'):
         printToo = True
@@ -62,6 +82,7 @@ def initLog(logFile=None, printToo=False):
         log(f'Cannot open "{logFile}": {error}', LOG_ERROR)
     if (printToo == True):
         GuessImageLog.printToo = printToo
+    GuessImageLog.logStart()
     log(f'Log initialization complete: log file={GuessImageLog.logFileName} | log level={GuessImageLog.logCurrentLevel}')
 
 def log(str, logLevel=LOG_INFO):
@@ -72,7 +93,8 @@ def log(str, logLevel=LOG_INFO):
         print(str)
     else:
         # Get date and time
-        time = dt.now().strftime("%d-%m-%Y %H:%M:%S")
+        tzinfo=ZoneInfo('Europe/Moscow')
+        time = dt.now(tzinfo).strftime("%d-%m-%Y %H:%M:%S")
         logStr = f'[{time}]:{logLevel}:{str}'
         GuessImageLog.logHandle.write(logStr+"\n")
         GuessImageLog.logHandle.flush()

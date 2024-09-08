@@ -13,6 +13,38 @@ class guess_image:
 
     GAME2NUMBEROFOPTIONS = 3
 
+    IMAGERANGEDIFF = 51
+    CREATORRANGEDIFF = 40
+
+    # Get range for image search
+    # Returns:
+    #   (startYear, endYear) - start, end years for image creation
+    def getImageCreationRange(intYear):
+        return (intYear - guess_image.IMAGERANGEDIFF, intYear + guess_image.IMAGERANGEDIFF)
+
+    # Get range for creator seatch by image year
+    # Returns:
+    #   (startYear, endYear) - start, end years for image creation
+    def getCreatorByImageYearRange(intYear):
+        return (intYear - 2*guess_image.CREATORRANGEDIFF, intYear + 2*guess_image.IMAGERANGEDIFF)
+
+    # Get range for creator search
+    # Returns:
+    #   (None,None) - cannot detirmine
+    #   (startYear, endYear) - start, end years for creator
+    def getCreatorYearRange(creatorBirth, creatorDeath):
+        # return nothing if neither birth nor death provided
+        if (not creatorBirth and not creatorDeath):
+            return (None,None)
+        middleYear = 0
+        if (creatorBirth and not creatorDeath):
+            middleYear = creatorBirth + guess_image.CREATORRANGEDIFF
+        elif (creatorDeath and not creatorBirth):
+            middleYear = creatorDeath - guess_image.CREATORRANGEDIFF
+        else:
+            middleYear = int((creatorDeath - creatorBirth)/2)
+        return (middleYear-2*guess_image.CREATORRANGEDIFF, middleYear+2*guess_image.CREATORRANGEDIFF)
+
     # Analize params and understand which page to show next
     def getPageToShow(queryParams):
         user = queryParams.get('user')
@@ -198,8 +230,17 @@ class guess_image:
             return None # Error message is printed in getRandom function
         creatorId = ret[0]
         imageId = ret[1]
+        # Get year range for other images
+        imageInfo = Connection.getImageInfoById(imageId)
+        yearRange = (None, None)
+        if (dbFound(imageInfo)):
+            yearRange = guess_image.getImageCreationRange(imageInfo['intYear'])
         # Get 3 random images where creator is not the same
-        otherImageIds = Connection.getRandomImageIdsOfOtherCreators(creatorId, complexity, guess_image.GAME2NUMBEROFOPTIONS)
+        otherImageIds = Connection.getRandomImageIdsOfOtherCreators(
+            creatorId=creatorId,
+            complexity=complexity, 
+            n=guess_image.GAME2NUMBEROFOPTIONS,
+            range=yearRange)
         if (dbNotFound(otherImageIds) or len(otherImageIds) != guess_image.GAME2NUMBEROFOPTIONS):
             print(f'ERROR: {fName}: Cannot get random {guess_image.GAME2NUMBEROFOPTIONS} images of creator other than {creatorId}')
             return None

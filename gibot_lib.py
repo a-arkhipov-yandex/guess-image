@@ -2,7 +2,7 @@ import telebot
 from telebot import types
 from random import shuffle
 
-VERSION='2.0'
+VERSION='2.01'
 
 from db_lib import *
 from game_lib import *
@@ -270,9 +270,18 @@ def ibotShowQuestionType2(bot,message, gameId, gameType = 2):
     if (gameType == 2): # Show answer options
         creatorId = imageInfo['creatorId']
         creatorName = imageInfo['creatorName']
-        creators = Connection.getNCreators(CREATORS_IN_TYPE2_ANSWER, creatorId, complexity)
+
+        # Get year range for creators
+        yearRange = guess_image.getCreatorByImageYearRange(imageInfo['intYear'])
+        log(f'Range = {yearRange}', LOG_DEBUG)
+        creators = Connection.getNCreators(
+            n=CREATORS_IN_TYPE2_ANSWER,
+            exclude=creatorId,
+            complexity=complexity,
+            range=yearRange)
         creators.append({'creatorId':creatorId,'creatorName':creatorName})
         shuffle(creators)
+        log(creators,LOG_DEBUG)
         # Show buttons with answer options
         keyboard = types.InlineKeyboardMarkup()
         for i in range(0, len(creators)): # 2 because we start with 1 + correct creator

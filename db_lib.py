@@ -442,10 +442,25 @@ class Connection:
         return ret
 
     # Returns 'n' imageIds or None if connection not initialized or issue with DB
-    def getRandomImageIdsOfOtherCreators(creatorId, complexity, n = 1):
+    def getRandomImageIdsOfOtherCreators(creatorId, complexity, n, range = (None, None)):
+        if ((len(range) != 2)):
+            log(f'Wrong range format provided: {range}',LOG_ERROR)
+            range = (None, None)
+        params = {'c':creatorId, 'com':complexity, 'n':n}
+        query2 = ''
+        if ((range[0] != None) and (range[1] != None)):
+            query2 = ' and (i.year > %(start)s and i.year < %(end)s)'
+            params['start'] = range[0]
+            params['end'] = range[1]
+            pass
         #query = "SELECT id FROM images where creator!=%(creator)s ORDER BY RANDOM() LIMIT %(n)s"
-        query = "SELECT i.id FROM images as i join creators as c on i.creator=c.id where creator!=%(c)s and complexity<=%(com)s ORDER BY RANDOM() LIMIT %(n)s"
-        ret = Connection.executeQuery(query,{'c':creatorId, 'com':complexity, 'n':n},True)
+        query = f'''
+            SELECT i.id FROM images as i join creators as c on i.creator=c.id
+            where creator!=%(c)s and complexity<=%(com)s {query2}
+            ORDER BY RANDOM()
+            LIMIT %(n)s;
+        '''
+        ret = Connection.executeQuery(query,params,True)
         if (dbFound(ret)):
             if (n == 1):
                 ret = ret[0]
@@ -897,9 +912,25 @@ class Connection:
     # Returns:
     #   None - issue with DB
     #   [{'creatorId':id,'creatorName':name}] - creators
-    def getNCreators(n, exclude, complexity):
-        query = "SELECT id,name FROM creators where id != %(e)s and complexity <= %(c)s ORDER BY RANDOM() LIMIT %(n)s"
-        ret = Connection.executeQuery(query,{'e':exclude, 'c':complexity,'n':n},True)
+    def getNCreators(n, exclude, complexity, range=(None,None)):
+        if ((len(range) != 2)):
+            log(f'Wrong range format provided for creator: {range}',LOG_ERROR)
+            range = (None, None)
+        params = {'e':exclude, 'c':complexity,'n':n}
+        query2 = ''
+        if ((range[0] != None) and (range[1] != None)):
+            query2 = ' and ((birth is %(start1)s or birth > %(start2)s) and (death is %(end1)s or death < %(end2)s))'
+            params['start1'] = None
+            params['start2'] = range[0]
+            params['end1'] = None
+            params['end2'] = range[1]
+        query = f'''
+            SELECT id,name FROM creators
+            where id != %(e)s and complexity <= %(c)s {query2}
+            ORDER BY RANDOM()
+            LIMIT %(n)s;
+        '''
+        ret = Connection.executeQuery(query,params,True)
         if (dbFound(ret)):
             retArr = []
             for creator in ret:
@@ -950,7 +981,7 @@ class Connection:
                 except (Exception, psycopg2.DatabaseError) as error:
                     log(f'{fName}: Failed finish game {gameId}: {error}',LOG_ERROR)
         else:
-            log(f"{fName}: Cannot find game {gameId}: image not found",LOG_ERROR)
+            log(f"{fName}: Cannot find game {gameId}: game not found",LOG_ERROR)
         return ret
 
     # Check is game is finished. Returns True/False

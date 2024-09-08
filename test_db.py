@@ -240,10 +240,42 @@ class TestDB:
         assert(dbFound(res4Ids))
 
     def testGetRandomImageIdsOfOtherCreators(self):
-        res1Id = Connection.getRandomImageIdsOfOtherCreators(2, 1) # 1 Id
-        res4Ids = Connection.getRandomImageIdsOfOtherCreators(2, 1, n=4) # 4 Ids
+        yearRange = (1500, 1600)
+        res1Id = Connection.getRandomImageIdsOfOtherCreators(creatorId=2, complexity=1, n=1, range=yearRange) # 1 Id
+        res4Ids = Connection.getRandomImageIdsOfOtherCreators(creatorId=2, complexity=1, n=4) # 4 Ids
+        resRange = False
+        if (dbFound(res1Id)):
+            game1Id = res1Id[0]
+            gameInfo = Connection.getImageInfoById(game1Id)
+            resRange = (gameInfo['intYear'] > yearRange[0] and gameInfo['intYear'] < yearRange[1])
+        
         assert(dbFound(res1Id))
         assert(dbFound(res4Ids))
+        assert(resRange)
+
+    def testGetNCreators(self):
+        yearRange = (1800, 1900)
+        res2Ids = Connection.getNCreators(n=2, exclude=2, complexity=1, range=(None,None))
+        res4Ids = Connection.getNCreators(n=8, exclude=2, complexity=1, range=yearRange)
+        resRange = True
+        if (dbFound(res4Ids)):
+            creators = res4Ids
+            for c in creators:
+                creatorInfo = Connection.getCreatorInfoById(c['creatorId'])
+                birth = creatorInfo['birth']
+                if (birth):
+                    if (birth < yearRange[0]):
+                        resRange = False
+                        break
+                death = creatorInfo['death']
+                if (death):
+                    if (death > yearRange[1]):
+                        resRange = False
+                        break
+
+        assert(dbFound(res2Ids) and (len(res2Ids) == 2))
+        assert(dbFound(res4Ids) and len(res4Ids) == 8)
+        assert(resRange)
 
     def testInsertDeleteGame(self):
         # test inserting new game

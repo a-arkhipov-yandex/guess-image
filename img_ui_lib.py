@@ -208,7 +208,7 @@ def showQuestionGameType2(queryParams, gameInfo, textQuestion):
     else:
         creatorId = imageInfo['creatorId']
         creatorName = imageInfo['creatorName']
-        creators = Connection.getNCreators(CREATORS_IN_TYPE2_ANSWER, creatorId, complexity)
+        creators = Connection.getNCreators(n=CREATORS_IN_TYPE2_ANSWER, exclude=creatorId, complexity=complexity)
         creators.append({'creatorId':creatorId,'creatorName':creatorName})
         shuffle(creators)
         combobox = showCreatorsCombobox(creators)
