@@ -2,6 +2,8 @@ import telebot
 from telebot import types
 from random import shuffle
 
+VERSION='2.0'
+
 from db_lib import *
 from game_lib import *
 from log_lib import *
@@ -67,7 +69,7 @@ def ibotGetWelcomeMessage(userName):
     print(settings)
     ret = f'''
 Добро пожаловать, {userName}!
-   Это игра "Угадай картину".
+   Это игра "Угадай картину". Версия: {VERSION}
 
 Твои текущие настройки следующие:
     '''
