@@ -55,8 +55,9 @@ def settings(message: types.Message):
     ibotRequestComplexity(bot, message)
 
 @bot.callback_query_handler(func=lambda message: re.match(fr'^{IBOT_COMPLEXITY_ANSWER}\d+$', message.data))
-def complexityHanderl(message: types.Message):
+def complexityHanderl(message: types.CallbackQuery):
     # Check user name format first
+    bot.answer_callback_query(message.id)
     if (not ibotCheckUserName(bot, message)):
         return
     userName = message.from_user.username
@@ -74,7 +75,8 @@ def complexityHanderl(message: types.Message):
     ibotRequestGameType(bot, message)
 
 @bot.callback_query_handler(func=lambda message: re.match(fr'^{IBOT_GAMETYPE_ANSWER}\d+$', message.data))
-def gameTypeHanderl(message: types.Message):
+def gameTypeHanderl(message: types.CallbackQuery):
+    bot.answer_callback_query(message.id)
     # Check user name format first
     if (not ibotCheckUserName(bot, message)):
         return
@@ -132,8 +134,9 @@ def startNewGame(message: types.Message):
     ibotShowQuestion(bot, message, gameType, gameId)
 
 @bot.callback_query_handler(func=lambda message: re.match(fr'^{IBOT_TYPE2_ANSWER}\d+$', message.data))
-def gameType2AnswerHanderl(message: types.Message):
+def gameType2AnswerHanderl(message: types.CallbackQuery):
     userName = message.from_user.username
+    bot.answer_callback_query(message.id)
     # Check user name format first
     if (not ibotCheckUserName(bot, message)):
         return
@@ -199,9 +202,10 @@ def gameType3AnswerHanderl(bot, message: types.Message):
     ibotShowGameResult(bot=bot, message=message, result=result, correctAnswer=correctAnswer, correctMessage=correctMessage)
 
 @bot.callback_query_handler(func=lambda message: re.match(fr'^{IBOT_TYPE1_ANSWER}\d+$', message.data))
-def gameType1AnswerHanderl(message: types.Message):
+def gameType1AnswerHanderl(message: types.CallbackQuery):
     fName = gameType1AnswerHanderl.__name__
     userName = message.from_user.username
+    bot.answer_callback_query(message.id)
     # Check user name format first
     ret = ibotCheckUserName(bot, message)
     if (not ret):

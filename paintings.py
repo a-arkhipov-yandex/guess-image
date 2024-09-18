@@ -29,20 +29,13 @@ def main():
     #bulkUpload(creators, titles, years)
 
     #Connection.initConnection(test=False)
-    if (not Connection.initConnection(test=True)):
+    if (not Connection.initConnection(test=False)):
         print('ERROR: Cannot init connection')
         exit()
 
-    import pytz
-    #print(pytz.all_timezones)
-    from zoneinfo import ZoneInfo
-    tzinfo=ZoneInfo('Europe/Moscow')
-    from datetime import datetime as dt
-    print(dt.now(tzinfo))
-
     #Connection.clearAllCurrentGames()
 
-    #Connection.updateCreatorsFromCSV()
+    Connection.updateCreatorsFromCSV()
 
     #Connection.updateDB(creators, titles, years, intYears, orientations)
 
