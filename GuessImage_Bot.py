@@ -40,15 +40,18 @@ def cmdHandler(message):
         bot.send_message(message.from_user.id, ibotGetHelpMessage(message.from_user.username))
 
 @bot.callback_query_handler(func=lambda message: message.data == CMD_START)
-def startHandler(message: types.Message):
+def startHandler(message: types.CallbackQuery) -> None:
+    bot.answer_callback_query(callback_query_id=message.id)
     startNewGame(message)
 
 @bot.callback_query_handler(func=lambda message: message.data == CMD_SETTINGS)
-def settingsHandler(message: types.Message):
+def settingsHandler(message: types.CallbackQuery) -> None:
+    bot.answer_callback_query(callback_query_id=message.id)
     settings(message)
 
 @bot.callback_query_handler(func=lambda message: message.data == CMD_HELP)
-def helpHandler(message: types.Message):
+def helpHandler(message: types.CallbackQuery) -> None:
+    bot.answer_callback_query(callback_query_id=message.id)
     bot.send_message(message.from_user.id, ibotGetHelpMessage(message.from_user.username))
 
 def settings(message: types.Message):
@@ -56,8 +59,8 @@ def settings(message: types.Message):
 
 @bot.callback_query_handler(func=lambda message: re.match(fr'^{IBOT_COMPLEXITY_ANSWER}\d+$', message.data))
 def complexityHanderl(message: types.CallbackQuery):
+    bot.answer_callback_query(callback_query_id=message.id)
     # Check user name format first
-    bot.answer_callback_query(message.id)
     if (not ibotCheckUserName(bot, message)):
         return
     userName = message.from_user.username
@@ -76,7 +79,7 @@ def complexityHanderl(message: types.CallbackQuery):
 
 @bot.callback_query_handler(func=lambda message: re.match(fr'^{IBOT_GAMETYPE_ANSWER}\d+$', message.data))
 def gameTypeHanderl(message: types.CallbackQuery):
-    bot.answer_callback_query(message.id)
+    bot.answer_callback_query(callback_query_id=message.id)
     # Check user name format first
     if (not ibotCheckUserName(bot, message)):
         return
@@ -136,7 +139,7 @@ def startNewGame(message: types.Message):
 @bot.callback_query_handler(func=lambda message: re.match(fr'^{IBOT_TYPE2_ANSWER}\d+$', message.data))
 def gameType2AnswerHanderl(message: types.CallbackQuery):
     userName = message.from_user.username
-    bot.answer_callback_query(message.id)
+    bot.answer_callback_query(callback_query_id=message.id)
     # Check user name format first
     if (not ibotCheckUserName(bot, message)):
         return
@@ -202,10 +205,10 @@ def gameType3AnswerHanderl(bot, message: types.Message):
     ibotShowGameResult(bot=bot, message=message, result=result, correctAnswer=correctAnswer, correctMessage=correctMessage)
 
 @bot.callback_query_handler(func=lambda message: re.match(fr'^{IBOT_TYPE1_ANSWER}\d+$', message.data))
-def gameType1AnswerHanderl(message: types.CallbackQuery):
+def gameType1AnswerHanderl(message: types.CallbackQuery) -> None:
     fName = gameType1AnswerHanderl.__name__
     userName = message.from_user.username
-    bot.answer_callback_query(message.id)
+    bot.answer_callback_query(callback_query_id=message.id)
     # Check user name format first
     ret = ibotCheckUserName(bot, message)
     if (not ret):
