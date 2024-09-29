@@ -368,13 +368,42 @@ class Connection:
         return ret
 
     # Update DB
-    def updateDB(creators, titles, years, intYears, orientations):
+    def updateDB(creators, titles, years, intYears, orientations) -> None:
         if (not Connection.isInitialized()):
-            log("Cannot updateDB - connection is not initialized", LOG_ERROR)
+            log(str="Cannot updateDB - connection is not initialized", logLevel=LOG_ERROR)
             return
-        Connection.bulkCreatorInsert(creators)
-        mCreators = getImageCreatorMap(creators, titles, years, intYears, orientations)
-        Connection.bulkImageInsersion(mCreators)
+        Connection.bulkCreatorInsert(creators=creators)
+        mCreators = getImageCreatorMap(creators=creators, titles=titles, years=years, intYears=intYears, orientations=orientations)
+        Connection.bulkImageInsersion(mCreators=mCreators)
+
+    # Update DB - remove non existing creators and images
+    def updateDB2(creators, titles, years, intYears, orientations) -> None:
+        if (not Connection.isInitialized()):
+            log(str="Cannot updateDB2 - connection is not initialized", logLevel=LOG_ERROR)
+            return
+        Connection.bulkCreatorsDelete(creators=creators)
+        mCreators = getImageCreatorMap(creators=creators, titles=titles, years=years, intYears=intYears, orientations=orientations)
+        Connection.bulkImageDeletion(mCreators=mCreators)
+
+    # Bulk creators deletion
+    def bulkCreatorsDelete(creators) -> None:
+        creatorsSet = set(creators)
+        # Get all creators from DB
+        creators = Connection.getAllCreatorsInfo()
+        if (creators != None):
+            # Create set of creators in DB - creatorsSetDB
+            creatorsSetDb = set()
+            for creator in creators:
+                creatorsSetDb.add(creator['name'])
+            # For each creator in creatorsrSet check that it is in creatorsSetDB
+            for creator in creatorsSetDb:
+                if (creator not in creatorsSet):
+                    # Delete creator
+                    log(str=f'Delete creator {creator}',logLevel=LOG_DEBUG)
+                    creatorId = Connection.getCreatorIdByName(creator=creator)
+                    Connection.deleteCreator(id=creatorId)
+        else:
+            log(str=f'Cannot get creators from DB',logLevel=LOG_ERROR)
 
     # Returns:
     #    creatorID by name
@@ -382,10 +411,106 @@ class Connection:
     #    NOT_FOUND - not found creator
     def getCreatorIdByName(creator):
         query = "SELECT id FROM creators WHERE name =%(creator)s"
-        ret = Connection.executeQuery(query,{'creator':creator})
-        if (dbFound(ret)):
+        ret = Connection.executeQuery(query=query,params={'creator':creator})
+        if (dbFound(result=ret)):
             ret = ret[0]
         return ret
+
+    # Bulk image deletion
+    def bulkImageDeletion(mCreators) -> None:
+        if (not Connection.isInitialized()):
+            log(str="Cannot bulk image delete - connection is not initialized",logLevel=LOG_ERROR)
+            return
+        # Get all images from DB
+        images = Connection.getAllImages()
+        if (dbFound(result=images)):
+            for imageInfo in images:
+                pId = imageInfo['creatorId']
+                iYear = imageInfo['year']
+                iName = imageInfo['name']
+                # Check if creator exists
+                ret = Connection.checkCreatorExists(creatorId=pId)
+                if (not ret):
+                    # Delete image
+                    log(str=f'Delete image (no creator) {pId} - {iName} - {iYear}',logLevel=LOG_DEBUG)
+                    Connection.deleteImage(imageId=imageInfo['id'])
+                    continue
+        else:
+            log(str=f'No images found in DB',logLevel=LOG_WARNING)
+        # Get all images from DB again
+        images = Connection.getAllImages(creatorName=True)
+        if (dbFound(result=images)):
+            for imageInfo in images:
+                pId = imageInfo['creatorId']
+                iYear = imageInfo['year']
+                iName = imageInfo['name']
+                pName = imageInfo['creatorName']
+                # Creator exists - check if image exists locally
+                # Get all images for the creator
+                cImages = mCreators.get(pName)
+                if (not cImages):
+                    log(str=f'Cannot find images for creator {pName}', logLevel=LOG_ERROR)
+                    continue
+                # Go through all images of creator
+                found = False
+                for image in cImages:
+                    if ((image[0] == iName) and (image[2] == iYear)):
+                        found = True
+                        break
+                if (not found):
+                    # Delete image
+                    log(str=f'Delete image (no image) {pName} - {iName} - {iYear}',logLevel=LOG_DEBUG)
+                    Connection.deleteImage(id=imageInfo['id'])
+                    continue
+        else:
+            log(str=f'No images found in DB 2',logLevel=LOG_WARNING)
+
+    # Check if creator exists in DB
+    # Returns:
+    #    None if connection is not initialized or error during query
+    #    True if exists
+    #    False if not exists
+    def checkCreatorExists(creatorId) -> bool:
+        query = "SELECT id FROM creators WHERE id =%(cId)s"
+        ret = Connection.executeQuery(query=query,params={'cId':creatorId})
+        if (dbFound(result=ret)):
+            ret = True
+        else:
+            ret = False
+        return ret
+
+    # Get all images from DB
+    # Returns:
+    #   ['imageInfo1',...] - array of image info
+    #   None - in case of error
+    def getAllImages(creatorName=False):
+        fName = Connection.getAllImages.__name__
+        if (not Connection.isInitialized()):
+            log(str=f"{fName}: Cannot get all images - connection is not initialized",logLevel=LOG_ERROR)
+            return None
+        images = []
+        query = f"""select i.id, i.creator, i.year, i.name
+                    from images as i
+                """
+        if (creatorName):
+            query = f"""select i.id, i.creator, i.year, i.name, c.name
+                        from images as i join creators as c on i.creator=c.id
+                    """
+        ret = Connection.executeQuery(query=query,params={},all=True)
+        if (dbFound(result=ret)):
+            for i in ret:
+                # Fill out creator info
+                image = {}
+                image['id'] = i[0]
+                image['creatorId'] = i[1]
+                image['year'] = i[2]
+                image['name'] = i[3]
+                if (creatorName):
+                    image['creatorName'] = i[4]
+                images.append(image)
+        else:
+            return None
+        return images
 
     # Returns:
     #    creatorInfo by id {'id':N,...}
