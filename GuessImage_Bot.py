@@ -28,7 +28,7 @@ def get_text_messages(message) -> None:
 
 def cmdHandler(message) -> None:
     if message.text == CMD_START:
-        ret = startHandler(message=message)
+        ret = startNewGame(message=message)
         #bot.send_message(message.from_user.id, ret)
     elif message.text == CMD_SETTINGS:
         settings(message=message)
