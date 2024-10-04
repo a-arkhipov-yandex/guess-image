@@ -1,6 +1,7 @@
 import telebot
 from telebot import types
 from random import shuffle
+import telegram
 
 VERSION='2.01'
 
@@ -18,8 +19,8 @@ CMD_HELP = '/help'
 CMD_SETTINGS = '/settings'
 
 # Returns help message
-def ibotGetHelpMessage(userName):
-    ret = ibotGetWelcomeMessage(userName)
+def ibotGetHelpMessage(userName) -> str:
+    ret = ibotGetWelcomeMessage(userName=userName)
     return ret + '''
 Команды GuessImage_Bot:
     /help - вывести помощь по каомандам (это сообщение)
@@ -30,24 +31,25 @@ def ibotGetHelpMessage(userName):
     #    /game - продолжить начатую игру
     #'''
 
-def ibotIsUserExist(userName):
-    userId = Connection.getUserIdByName(userName)
-    if(dbNotFound(userId)):
+def ibotIsUserExist(userName) -> bool:
+    userId = Connection.getUserIdByName(name=userName)
+    if(dbNotFound(result=userId)):
         return False
     return True
 
+def getUserByMessage(message:telegram.Message):
+    username = message.from_user.username
+    telegramid = message.from_user.id
+    ret = str(telegramid)
+    if (checkUserNameFormat(user=username)):
+        ret = username
+    return ret
+
 # Check username. Return True on success of False on failure
-def ibotCheckUserName(bot, message):
-    userName = message.from_user.username
-    # Check user name format first
-    if (not dbLibCheckUserName(userName)):
-        bot.send_message(
-            message.from_user.id,
-            text=f'Неверный формат имени пользователя {userName} - простите, но у вас не получится поиграть.'
-        )
-        return False
+def ibotCheckUserName(bot, message:telegram.Message) -> bool:
+    userName = getUserByMessage(message=message)
     # Check that user exists in DB
-    if (not ibotIsUserExist(userName)):
+    if (not ibotIsUserExist(userName=userName)):
         bot.send_message(
             message.from_user.id,
             text=f'Пользователь не зарегистрирован. Наберите "{CMD_START}".'
@@ -57,18 +59,21 @@ def ibotCheckUserName(bot, message):
 
 # Get user settings
 def ibotGetUserSettings(userName):
-    userSettings = Connection.getUserSetting(userName)
+    userSettings = Connection.getUserSetting(userName=userName)
     ret = None
-    if (dbFound(userSettings)):
+    if (dbFound(result=userSettings)):
         ret = {'game_type':userSettings[0], 'complexity':userSettings[1]}
     return ret
 
 # Get welcome message
-def ibotGetWelcomeMessage(userName):
-    settings = ibotGetUserSettings(userName)
+def ibotGetWelcomeMessage(userName) -> str:
+    settings = ibotGetUserSettings(userName=userName)
     print(settings)
+    un = ''
+    if (userName):
+        un= f', {userName}'
     ret = f'''
-Добро пожаловать, {userName}!
+Добро пожаловать{un}!
    Это игра "Угадай картину". Версия: {VERSION}
 
 Твои текущие настройки следующие:
@@ -93,47 +98,47 @@ def ibotGetWelcomeMessage(userName):
     return ret
 
 # Settings section
-def ibotSettings(bot, message):
-    ibotRequestGameType(bot, message)
+def ibotSettings(bot, message) -> None:
+    ibotRequestGameType(bot=bot, message=message)
 
-# Check that game3 is in progress
+# Check that game type gameType is in progress
 # Returns: True/False
-def ibotCheckGameTypeNInProgress(bot, message, gameType):
+def ibotCheckGameTypeNInProgress(bot, message, gameType) -> bool:
     fName = ibotCheckGameTypeNInProgress.__name__
-    userName = message.from_user.username
+    userName = getUserByMessage(message=message)
     # Check user name format first
-    ret = ibotCheckUserName(bot, message)
+    ret = ibotCheckUserName(bot=bot, message=message)
     if (not ret):
         return False
-    ret = Connection.getCurrentGame(userName)
-    if (dbFound(ret)):
-        gameInfo = Connection.getGameInfoById(ret)
-        if (dbFound(gameInfo)): # Game info is valid
+    ret = Connection.getCurrentGame(userName=userName)
+    if (dbFound(result=ret)):
+        gameInfo = Connection.getGameInfoById(id=ret)
+        if (dbFound(result=gameInfo)): # Game info is valid
             if (gameInfo['type'] == gameType):
                 return True
         else:
-            log(f'{fName}: Cannot get gameInfo from DB: {ret}', LOG_ERROR)
+            log(str=f'{fName}: Cannot get gameInfo from DB: {ret}', logLevel=LOG_ERROR)
     return False
 
 # Register new user. Returns: True/False
-def ibotUserRegister(userName):
-    if (not dbLibCheckUserName(userName)):
-        log(f'ibotUserRegister: Try to register user with wrong format ({userName})', LOG_ERROR)
+def ibotUserRegister(userName) -> bool:
+    if (not dbLibCheckUserName(user_name=userName)):
+        log(str=f'ibotUserRegister: Try to register user with wrong format ({userName})', logLevel=LOG_ERROR)
         return False
     # Check if user registered
-    userId = Connection.getUserIdByName(userName)
-    if (not dbFound(userId)):
+    userId = Connection.getUserIdByName(name=userName)
+    if (not dbFound(result=userId)):
         # Register new user
-        ret = Connection.insertUser(userName)
+        ret = Connection.insertUser(userName=userName)
         # If registration fails - return error
         if (not ret):
             return False
     return True
 
 # Request new GameType
-def ibotRequestGameType(bot, message):
+def ibotRequestGameType(bot, message) -> None:
     # Check user name format first
-    ret = ibotCheckUserName(bot, message)
+    ret = ibotCheckUserName(bot=bot, message=message)
     if (not ret):
         return
     # Get game type
@@ -147,9 +152,9 @@ def ibotRequestGameType(bot, message):
     bot.send_message(message.from_user.id, text=question, reply_markup=keyboard)
 
 # Start new game
-def ibotRequestComplexity(bot, message):
+def ibotRequestComplexity(bot, message) -> None:
     # Check user name format first
-    ret = ibotCheckUserName(bot, message)
+    ret = ibotCheckUserName(bot=bot, message=message)
     if (not ret):
         return
     complexities = Connection.getComplexities()
@@ -158,17 +163,17 @@ def ibotRequestComplexity(bot, message):
     for c in complexities:
         key = types.InlineKeyboardButton(text=c[1], callback_data=f'{IBOT_COMPLEXITY_ANSWER}{c[0]}')
         keys.append(key)
-    keyboard = types.InlineKeyboardMarkup([keys]); # keyboard
+    keyboard = types.InlineKeyboardMarkup(keyboard=[keys]); # keyboard
     question = 'Выберите уровень сложности:'
     bot.send_message(message.from_user.id, text=question, reply_markup=keyboard)
 
-def ibotShowQuestion(bot,message,type,gameId):
+def ibotShowQuestion(bot,message,type,gameId) -> None:
     if (type == 1):
-        ibotShowQuestionType1(bot,message, gameId)
+        ibotShowQuestionType1(bot=bot,message=message, gameId=gameId)
     elif (type == 2):
-        ibotShowQuestionType2(bot,message, gameId)
+        ibotShowQuestionType2(bot=bot,message=message, gameId=gameId)
     elif (type == 3): # type = 3
-        ibotShowQuestionType3(bot,message, gameId)
+        ibotShowQuestionType3(bot=bot,message=message, gameId=gameId)
     else:
         bot.send_message(message.from_user.id, "Неизваестный тип игры. Пожалуйста, начните новую игру.")
     
@@ -184,26 +189,26 @@ def ibotFindNumOfType1Answer(imageIds, correctId):
             break
     return ret
 
-def ibotShowQuestionType1(bot,message, gameId):
+def ibotShowQuestionType1(bot,message, gameId) -> None:
     # Get gameInfo
-    gameInfo = Connection.getGameInfoById(gameId)
+    gameInfo = Connection.getGameInfoById(id=gameId)
     finished = (gameInfo['result'] != None)
     if (finished):
         bot.send_message(message.from_user.id, text=f'Извините, но игра уже завершена. Введите "{CMD_START}" чтобы начать новую.')
         return
-    imageIds = guess_image.getQuestionType1Options(gameInfo)
+    imageIds = guess_image.getQuestionType1Options(gameInfo=gameInfo)
     if (not imageIds):
-        log(f'{ibotShowQuestionType1.__name__}: wrong format of imageIds = {imageIds}', LOG_ERROR)
+        log(str=f'{ibotShowQuestionType1.__name__}: wrong format of imageIds = {imageIds}', logLevel=LOG_ERROR)
         bot.send_message(message.from_user.id, "Произошла ошибка. Пожалуйста начните новую игру")
         return
     data = []
     # Get image URLs
     for id in imageIds:
-        url = Connection.getImageUrlById(id)
+        url = Connection.getImageUrlById(id=id)
         data.append({'url':url,'iId':id})
 
     # Get text question
-    textQuestion = guess_image.getTextQuestion(gameInfo)
+    textQuestion = guess_image.getTextQuestion(gameInfo=gameInfo)
     bot.send_message(message.from_user.id, text=textQuestion)
     media_group = []
     for d in data:
@@ -214,17 +219,17 @@ def ibotShowQuestionType1(bot,message, gameId):
         mIds.append(m.id)
     mIdsTxt = " ".join(str(i) for i in mIds)
     # Save options in current game data
-    ret = Connection.setCurrentGameData(message.from_user.username, mIdsTxt)
+    ret = Connection.setCurrentGameData(userName=message.from_user.username, gameData=mIdsTxt)
     # Show buttons for answer
     keys = []
     for i in range(len(data)):
         responseData = f'{IBOT_TYPE1_ANSWER}{data[i]["iId"]}'
         keys.append(types.InlineKeyboardButton(text=str(i+1), callback_data=responseData))
-    keyboard = types.InlineKeyboardMarkup([keys])
+    keyboard = types.InlineKeyboardMarkup(keyboard=[keys])
     bot.send_message(message.from_user.id, text='Выберите вариант:', reply_markup=keyboard)
 
 # Send buttons after answer
-def ibotSendAfterAnswer(bot, message):
+def ibotSendAfterAnswer(bot, message) -> None:
     key1 = types.InlineKeyboardButton(text='Сыграть еще раз', callback_data=CMD_START)
     key2= types.InlineKeyboardButton(text='Выбрать другой тип игры/сложность', callback_data=CMD_SETTINGS)
     keyboard = types.InlineKeyboardMarkup(); # keyboard
@@ -234,46 +239,46 @@ def ibotSendAfterAnswer(bot, message):
     bot.send_message(message.from_user.id, text=question, reply_markup=keyboard)
 
 # Modify captures of images with creator, name, year
-def ibotModifyImageCaptures(bot, message, mIds, imageIds):
+def ibotModifyImageCaptures(bot, message, mIds, imageIds) -> None:
     if (len(mIds) != len(imageIds)):
-        log(f'{ibotModifyImageCaptures.__name__}: len of mIds and imageIds doesnt match', LOG_ERROR)
+        log(str=f'{ibotModifyImageCaptures.__name__}: len of mIds and imageIds doesnt match', logLevel=LOG_ERROR)
         return
     for i in range(0, len(mIds)):
-        ibotModifyImageCapture(bot, message, mIds[i], imageIds[i])
+        ibotModifyImageCapture(bot=bot, message=message, messageId=mIds[i], imageId=imageIds[i])
 
-def ibotModifyImageCapture(bot, message, messageId, imageId):
+def ibotModifyImageCapture(bot, message, messageId, imageId) -> None:
     # Get image info
-    imageInfo = Connection.getImageInfoById(imageId)
-    if (dbFound(imageInfo)):
+    imageInfo = Connection.getImageInfoById(id=imageId)
+    if (dbFound(result=imageInfo)):
         caption = f"{imageInfo['creatorName']} - {imageInfo['imageName']} - {imageInfo['yearStr']}"
         # Edit image capture
         bot.edit_message_caption(chat_id=message.from_user.id, message_id=messageId, caption=caption)
     else:
-        log(f'{ibotModifyImageCapture.__name__}: Cannot get image info for {imageId}', LOG_ERROR)
+        log(str=f'{ibotModifyImageCapture.__name__}: Cannot get image info for {imageId}', logLevel=LOG_ERROR)
 
-def ibotShowQuestionType2(bot,message, gameId, gameType = 2):
+def ibotShowQuestionType2(bot,message, gameId, gameType = 2) -> None:
     # Get gameInfo
-    gameInfo = Connection.getGameInfoById(gameId)
+    gameInfo = Connection.getGameInfoById(id=gameId)
     complexity = gameInfo['complexity']
     imageId = gameInfo['question']
     # Get image URL
-    url = Connection.getImageUrlById(imageId)
+    url = Connection.getImageUrlById(id=imageId)
     # Get answer options
-    imageInfo = Connection.getImageInfoById(imageId)
+    imageInfo = Connection.getImageInfoById(id=imageId)
     finished = (gameInfo['result'] != None)
     if (finished):
         bot.send_message(message.from_user.id, text='Игра уже сыграна. Пожалуйста, начните новую.')
         return
     # Show image
     bot.send_photo(message.from_user.id, url)
-    textQuestion = guess_image.getTextQuestion(gameInfo)
+    textQuestion = guess_image.getTextQuestion(gameInfo=gameInfo)
     if (gameType == 2): # Show answer options
         creatorId = imageInfo['creatorId']
         creatorName = imageInfo['creatorName']
 
         # Get year range for creators
-        yearRange = guess_image.getCreatorByImageYearRange(imageInfo['intYear'])
-        log(f'Range = {yearRange}', LOG_DEBUG)
+        yearRange = guess_image.getCreatorByImageYearRange(intYear=imageInfo['intYear'])
+        log(str=f'Range = {yearRange}', logLevel=LOG_DEBUG)
         creators = Connection.getNCreators(
             n=CREATORS_IN_TYPE2_ANSWER,
             exclude=creatorId,
@@ -281,7 +286,7 @@ def ibotShowQuestionType2(bot,message, gameId, gameType = 2):
             range=yearRange)
         creators.append({'creatorId':creatorId,'creatorName':creatorName})
         shuffle(creators)
-        log(creators,LOG_DEBUG)
+        log(str=creators,logLevel=LOG_DEBUG)
         # Show buttons with answer options
         keyboard = types.InlineKeyboardMarkup()
         for i in range(0, len(creators)): # 2 because we start with 1 + correct creator
@@ -295,11 +300,11 @@ def ibotShowQuestionType2(bot,message, gameId, gameType = 2):
     else: # game type == 3
         bot.send_message(message.from_user.id, text=textQuestion)
 
-def ibotShowQuestionType3(bot,message, gameId):
-    return ibotShowQuestionType2(bot,message, gameId, gameType=3)
+def ibotShowQuestionType3(bot,message, gameId) -> None:
+    return ibotShowQuestionType2(bot=bot, message=message, gameId=gameId, gameType=3)
 
 
-def ibotCheckAnswerGameType3(userCreatorName, correctCreatorName):
+def ibotCheckAnswerGameType3(userCreatorName, correctCreatorName) -> bool:
     # 1. Convern both strings to the same format
     userCreatorName = userCreatorName.lower() # Convert to lower
     correctCreatorName = correctCreatorName.lower()
@@ -309,14 +314,14 @@ def ibotCheckAnswerGameType3(userCreatorName, correctCreatorName):
 
     # 0. Full match
     if (userCreatorName == correctCreatorName):
-        log(f'Full match: {userCreatorName} == {correctCreatorName}',LOG_DEBUG)
+        log(str=f'Full match: {userCreatorName} == {correctCreatorName}',logLevel=LOG_DEBUG)
         return True
 
     lU = len(userCreatorName)
     lC = len(correctCreatorName)
     # 2. Check length of userAnswer
     if (lU > lC):
-        log(f'User len > correct len: {lU} > {lC}',LOG_DEBUG)
+        log(str=f'User len > correct len: {lU} > {lC}',logLevel=LOG_DEBUG)
         return False
     
     # 3. Check if only one word in answer (probably last name)
@@ -329,7 +334,7 @@ def ibotCheckAnswerGameType3(userCreatorName, correctCreatorName):
         # If correct last word len < 3 - only exact answer
         if (len(correctAnswerLastWord) <= 3):
             if (userAnswerLastWord == correctAnswerLastWord):
-                log(f'Full last word match (len <=3): {userAnswerLastWord} == {correctAnswerLastWord}',LOG_DEBUG)
+                log(str=f'Full last word match (len <=3): {userAnswerLastWord} == {correctAnswerLastWord}',logLevel=LOG_DEBUG)
                 return True
         else:
             # Check len difference
@@ -337,22 +342,22 @@ def ibotCheckAnswerGameType3(userCreatorName, correctCreatorName):
             lClw = len(correctAnswerLastWord)
             if (abs(lAlw-lClw) <= 2):
                 # Check similarity for last name
-                ret = isStrSimilar(userAnswerLastWord, correctAnswerLastWord)
+                ret = isStrSimilar(str1=userAnswerLastWord, str2=correctAnswerLastWord)
                 if (ret):
-                    log(f'Last word similarity match (similarity={ret}): {userAnswerLastWord} | {correctAnswerLastWord}',LOG_DEBUG)
+                    log(str=f'Last word similarity match (similarity={ret}): {userAnswerLastWord} | {correctAnswerLastWord}',logLevel=LOG_DEBUG)
                     return True
 
     if (lU > 5):
         correctAnswer = correctCreatorName[-lU:]
-        ret = isStrSimilar(userCreatorName, correctAnswer)
+        ret = isStrSimilar(str1=userCreatorName, str2=correctAnswer)
         if (ret):
-            log(f'Last part of answer similarity (similarity={ret}): {userCreatorName} | {correctAnswer}',LOG_DEBUG)
+            log(str=f'Last part of answer similarity (similarity={ret}): {userCreatorName} | {correctAnswer}',logLevel=LOG_DEBUG)
             return True
 
     # 4. Check Levenstein similarity for full answer
-    ret = isStrSimilar(userCreatorName, correctCreatorName)
+    ret = isStrSimilar(str1=userCreatorName, str2=correctCreatorName)
     if (ret):
-        log(f'Full answer similarity (similarity={ret}: {userCreatorName} | {correctCreatorName}',LOG_DEBUG)
+        log(str=f'Full answer similarity (similarity={ret}: {userCreatorName} | {correctCreatorName}',logLevel=LOG_DEBUG)
         return True
 
     return ret

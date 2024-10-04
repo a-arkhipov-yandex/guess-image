@@ -381,9 +381,9 @@ class Connection:
         if (not Connection.isInitialized()):
             log(str="Cannot updateDB2 - connection is not initialized", logLevel=LOG_ERROR)
             return
-        Connection.bulkCreatorsDelete(creators=creators)
         mCreators = getImageCreatorMap(creators=creators, titles=titles, years=years, intYears=intYears, orientations=orientations)
         Connection.bulkImageDeletion(mCreators=mCreators)
+        Connection.bulkCreatorsDelete(creators=creators)
 
     # Bulk creators deletion
     def bulkCreatorsDelete(creators) -> None:
@@ -448,18 +448,16 @@ class Connection:
                 # Creator exists - check if image exists locally
                 # Get all images for the creator
                 cImages = mCreators.get(pName)
-                if (not cImages):
-                    log(str=f'Cannot find images for creator {pName}', logLevel=LOG_ERROR)
-                    continue
                 # Go through all images of creator
                 found = False
-                for image in cImages:
-                    if ((image[0] == iName) and (image[2] == iYear)):
-                        found = True
-                        break
+                if (cImages):
+                    for image in cImages:
+                        if ((image[0] == iName) and (image[2] == iYear)):
+                            found = True
+                            break
                 if (not found):
                     # Delete image
-                    log(str=f'Delete image (no image) {pName} - {iName} - {iYear}',logLevel=LOG_DEBUG)
+                    log(str=f'Delete image (no image in S3) {pName} - {iName} - {iYear}',logLevel=LOG_DEBUG)
                     Connection.deleteImage(id=imageInfo['id'])
                     continue
         else:

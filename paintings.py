@@ -13,7 +13,8 @@ def main() -> None:
     updateAll = True
     updateS3 = True
     updateDB = True
-    updateCSV = False
+    cleanupDB = True
+    updateCSV = True
 
     prodDb = True
     initLog(printToo=True)
@@ -39,13 +40,14 @@ def main() -> None:
 
     # Put your adhoc code here!
 
-    if ((updateDB or updateCSV) and updateAll):
+    if ((updateDB or cleanupDB or updateCSV) and updateAll):
 
-        if (updateCSV):
-            Connection.updateCreatorsFromCSV()
         if (updateDB):
             Connection.updateDB(creators=creators, titles=titles, years=years, intYears=intYears, orientations=orientations)
+        if (cleanupDB):
             Connection.updateDB2(creators=creators, titles=titles, years=years, intYears=intYears, orientations=orientations)
+        if (updateCSV):
+            Connection.updateCreatorsFromCSV()
 
     Connection.closeConnection()
 
