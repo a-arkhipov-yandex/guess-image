@@ -1,3 +1,4 @@
+import time
 from db_lib import *
 from guess_image_lib import *
 from s3_lib import *
@@ -31,8 +32,16 @@ def main() -> None:
 
     #checkUrls(creators, titles, years)
     if (updateS3 and updateAll):
+        t = time.time()
+        log(str='Removing Non Existing Files On S3')
         removeNonExistingFilesOnS3()
+        tDiff = int(time.time() - t)
+        log(str=f"removeNonExistingFilesOnS3: {tDiff} seconds")
+        t = time.time()
+        log(str='Uploading Images to S3')
         bulkUpload(creators=creators, titles=titles, years=years)
+        tDiff = int(time.time() - t)
+        log(str=f"bulkUpload: {tDiff} seconds")
 
     if (not Connection.initConnection(test=not prodDb)):
         print('ERROR: Cannot init connection')
@@ -43,11 +52,23 @@ def main() -> None:
     if ((updateDB or cleanupDB or updateCSV) and updateAll):
 
         if (updateDB):
+            log(str='Updating DB 1')
+            t = time.time()
             Connection.updateDB(creators=creators, titles=titles, years=years, intYears=intYears, orientations=orientations)
+            tDiff = int(time.time() - t)
+            log(str=f"updateDB: {tDiff} seconds")
         if (cleanupDB):
+            log(str='Updating DB 2')
+            t = time.time()
             Connection.updateDB2(creators=creators, titles=titles, years=years, intYears=intYears, orientations=orientations)
+            tDiff = int(time.time() - t)
+            log(str=f"updateDB2: {tDiff} seconds")
         if (updateCSV):
+            log(str='Updating DB from CSV')
+            t = time.time()
             Connection.updateCreatorsFromCSV()
+            tDiff = int(time.time() - t)
+            log(str=f"updateCreatorsFromCSV: {tDiff} seconds")
 
     Connection.closeConnection()
 

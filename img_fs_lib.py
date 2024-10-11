@@ -11,7 +11,7 @@ def buildImgPathName(imgName):
 # Get all images in directory
 def getImgs():
     files = []
-    for f in listdir(IMAGE_DIR):
+    for f in listdir(path=IMAGE_DIR):
         # Remove '.jpg'
         f1 = f[:-4]
         # Skip '.DS_S'
@@ -19,7 +19,7 @@ def getImgs():
             files.append(f1)
 
     numFiles = len(files)
-    log(f'Number of files: {numFiles}')
+    log(str=f'Number of files: {numFiles}')
 
     creators = []
     titles = []
@@ -29,29 +29,32 @@ def getImgs():
     for f in files:
         tmp = f.split(" - ")
         if len(tmp) != 3:
-            print(f"ERROR: Wrong numer of items: {tmp}")
+            log(str=f"ERROR: Wrong numer of items: {tmp}", logLevel=LOG_ERROR)
             continue
-        #print(tmp)
         creator = tmp[0].strip()
         if creator != tmp[0]:
-            print(f'WARNING: Spaces in creator {tmp}')
-        creators.append(creator)
+            log(str=f'Spaces in creator: {tmp}', logLevel=LOG_ERROR)
+            continue
         title = tmp[1].strip()
         if title != tmp[1]:
-            print(f'WARNING: Spaces in title {tmp}')        
-        titles.append(title)
+            log(str=f'Spaces in title: {tmp}', logLevel=LOG_ERROR)
+            continue
         year = tmp[2].strip()
         if year != tmp[2]:
-            print(f'WARNING: Spaces in year {tmp}')
-        years.append(year)
-
-        intYear = getYear(year)
+            log(str=f'Spaces in year: {tmp}', logLevel=LOG_ERROR)
+            continue
+        intYear = getYear(rawYear=year)
         if (not intYear):
-            print(f'ERROR: Cannet get int year: "{tmp}"')
+            log(str=f'Cannet get int year: "{tmp}"', logLevel=LOG_ERROR)
+            continue
+
+        creators.append(creator)
+        titles.append(title)
+        years.append(year)
         intYears.append(intYear)
 
-        fullPath = getImageFullPath(creator, title, year)
-        orient = getImageOrientation(fullPath)
+        fullPath = getImageFullPath(creator=creator, title=title, year=year)
+        orient = getImageOrientation(file=fullPath)
         orientation.append(orient)
 
     return [creators, titles, years, intYears, orientation]
