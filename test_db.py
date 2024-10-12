@@ -6,7 +6,7 @@ from db_lib import *
 
 class TestDB:
 
-    def testDBConnectoin(self): # Test both test and production connection
+    def test_DBConnectoin(self) -> None: # Test both test and production connection
         initLog(printToo=True)
         Connection.initConnection(test=False)
         isInit1 = Connection.isInitialized()
@@ -644,10 +644,10 @@ class TestDB:
     def testGetAllImagesOfCreator(self):
         noneexistingСreatorId = 1000000
         existingCreatorId = 2 # Van Gogh
-        resNonexistingCreator = Connection.getAllImagesOfCreator(noneexistingСreatorId)
-        ret = Connection.getAllImagesOfCreator(existingCreatorId)
-        resExistingCreator = (dbFound(ret))
-        assert(resNonexistingCreator == None)
+        resNonexistingCreator = Connection.getAllImagesOfCreator(creatorId=noneexistingСreatorId)
+        ret = Connection.getAllImagesOfCreator(creatorId=existingCreatorId)
+        resExistingCreator = (dbFound(result=ret))
+        assert(resNonexistingCreator == [])
         assert(resExistingCreator)
 
     def testCloseConnection(self):

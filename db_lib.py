@@ -1273,6 +1273,7 @@ class Connection:
     # Returns: True if everything is equal / False - if any differences
     def compareCreatorInfo(creator, dbCreator) -> bool:
         ret = True
+        
         for k in dbCreator.keys():
             newV = creator.get(k)
             if (not newV):
