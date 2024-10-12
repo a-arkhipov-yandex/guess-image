@@ -577,7 +577,7 @@ class Connection:
         #query = "SELECT id FROM images where creator!=%(creator)s ORDER BY RANDOM() LIMIT %(n)s"
         query = f'''
             SELECT i.id FROM images as i join creators as c on i.creator=c.id
-            where creator!=%(c)s and complexity<=%(com)s {query2}
+            where i.creator!=%(c)s and c.complexity<=%(com)s {query2}
             ORDER BY RANDOM()
             LIMIT %(n)s;
         '''
@@ -1273,7 +1273,7 @@ class Connection:
     # Returns: True if everything is equal / False - if any differences
     def compareCreatorInfo(creator, dbCreator) -> bool:
         ret = True
-        
+
         for k in dbCreator.keys():
             newV = creator.get(k)
             if (not newV):

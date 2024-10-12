@@ -195,21 +195,21 @@ class guess_image:
     def getRandomCreatorAndImageId(complexity):
         fName = guess_image.getRandomCreatorAndImageId.__name__
        # Get random creator
-        ret = Connection.getRandomCreatorIds(complexity)
-        if (ret == None):
-            print(f'ERROR: {fName}: Cannoe get random creator: DB issue')
+        ret = Connection.getRandomCreatorIds(complexity=complexity)
+        if (ret is None):
+            log(str=f'{fName}: Cannoe get random creator: DB issue',logLevel=LOG_ERROR)
             return None
-        elif (dbNotFound(ret)):
-            print(f'ERROR: {fName}: Cannot get random creator: creator not found')
+        elif (dbNotFound(result=ret)):
+            log(str=f'{fName}: Cannot get random creator: creator not found',logLevel=LOG_ERROR)
             return None  
         creatorId = ret[0]
         # Get random image of the creator
-        ret = Connection.getRandomImageIdsOfCreator(creatorId)
+        ret = Connection.getRandomImageIdsOfCreator(creatorId=creatorId)
         if (ret == None):
-            print(f'ERROR: {fName}: Cannot get random image of creator {creatorId}: DB issue')
+            log(str=f'{fName}: Cannot get random image of creator {creatorId}: DB issue',logLevel=LOG_ERROR)
             return None
-        elif (dbNotFound(ret)):
-            print(f'ERROR: {fName}: Cannot get random image of creator {creatorId}: image not found')
+        elif (dbNotFound(result=ret)):
+            log(str=f'{fName}: Cannot get random image of creator {creatorId}: image not found',logLevel=LOG_ERROR)
             return None
         imageId = ret[0]
         return (creatorId, imageId)
@@ -225,29 +225,29 @@ class guess_image:
             print(f'ERROR: {fName}: Cannot get complexity: {queryParams}')
             return None
         complexity = int(complexity)
-        ret = guess_image.getRandomCreatorAndImageId(complexity)
+        ret = guess_image.getRandomCreatorAndImageId(complexity=complexity)
         if (not ret):
             return None # Error message is printed in getRandom function
         creatorId = ret[0]
         imageId = ret[1]
         # Get year range for other images
-        imageInfo = Connection.getImageInfoById(imageId)
+        imageInfo = Connection.getImageInfoById(id=imageId)
         yearRange = (None, None)
-        if (dbFound(imageInfo)):
-            yearRange = guess_image.getImageCreationRange(imageInfo['intYear'])
+        if (dbFound(result=imageInfo)):
+            yearRange = guess_image.getImageCreationRange(intYear=imageInfo['intYear'])
         # Get 3 random images where creator is not the same
         otherImageIds = Connection.getRandomImageIdsOfOtherCreators(
             creatorId=creatorId,
             complexity=complexity, 
             n=guess_image.GAME2NUMBEROFOPTIONS,
             range=yearRange)
-        if (dbNotFound(otherImageIds) or len(otherImageIds) != guess_image.GAME2NUMBEROFOPTIONS):
-            print(f'ERROR: {fName}: Cannot get random {guess_image.GAME2NUMBEROFOPTIONS} images of creator other than {creatorId}')
+        if (dbNotFound(result=otherImageIds) or len(otherImageIds) != guess_image.GAME2NUMBEROFOPTIONS):
+            log(str=f'{fName}: Cannot get random {guess_image.GAME2NUMBEROFOPTIONS} images of creator other than {creatorId}',logLevel=LOG_ERROR)
             return None
         userName = queryParams['user']
-        userId = Connection.getUserIdByName(userName)
-        if (userId == None or dbNotFound(userId)):
-            print(f'ERROR: {fName}: Cannot get user id by name {userName}')
+        userId = Connection.getUserIdByName(name=userName)
+        if (userId is None or dbNotFound(result=userId)):
+            log(str=f'{fName}: Cannot get user id by name {userName}',logLevel=LOG_ERROR)
             return None
         gameType = queryParams['type']
         questionIds = []
@@ -258,13 +258,13 @@ class guess_image:
         shuffle(questionIds)
         question = " ".join(str(i) for i in questionIds)
         # Generate game with user, type(1), correct_answer (correct_image_id), question(image ids)
-        ret = Connection.insertGame(userId, gameType, imageId, question, complexity)
-        if (ret == None):
-            print(f'ERROR: {fName}: Cannot insert game u={userName},gt={gameType},q={question},ca={imageId}')
+        ret = Connection.insertGame(user_id=userId, game_type=gameType, correct_answer=imageId, question=question, complexity=complexity)
+        if (ret is None):
+            log(str=f'{fName}: Cannot insert game u={userName},gt={gameType},q={question},ca={imageId}',logLevel=LOG_ERROR)
             return None
         else:
             # Set current_game
-            Connection.setCurrentGame(userName, ret)
+            Connection.setCurrentGame(userName=userName, gameId=ret)
         return ret
 
     # Generate new game with type 2 or 3 (if gameType is set): guess creator of the image
