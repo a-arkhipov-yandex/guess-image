@@ -50,11 +50,11 @@ class guess_image:
         user = queryParams.get('user')
         if (not user): # No user
             return guess_image.LOGIN_PAGE # Login page
-        userId = Connection.getUserIdByName(user)
-        if (userId == None):
+        userId = Connection.getUserIdByName(name=user)
+        if (userId is None):
             # error in db
             return guess_image.LOGIN_PAGE
-        elif (dbNotFound(userId)):
+        elif (dbNotFound(result=userId)):
             # No such user yet
             return guess_image.LOGIN_PAGE
         # User exist
@@ -65,78 +65,78 @@ class guess_image:
             if (not queryParams.get('type') or not queryParams.get('complexity')):
                 return guess_image.GAME_TYPE_PAGE # Game type choose
             else:
-                ret1 = dbLibCheckGameType(queryParams.get('type'))
-                ret2 = dbLibCheckGameComplexity(queryParams.get('complexity'))
+                ret1 = dbLibCheckGameType(game_type=queryParams.get('type'))
+                ret2 = dbLibCheckGameComplexity(game_type=queryParams.get('complexity'))
                 if (ret1 and ret2):
                     return guess_image.NEW_GAME_PAGE
                 else:
                     return guess_image.GAME_TYPE_PAGE # Wrong game_type
         # game id passed
         gameId = queryParams.get('game')
-        ret = dbLibCheckGameId(gameId)
+        ret = dbLibCheckGameId(game_id=gameId)
         if (not ret): # incorrect game id
             return guess_image.GAME_TYPE_PAGE
         
-        gameInfo = Connection.getGameInfoById(gameId)
+        gameInfo = Connection.getGameInfoById(id=gameId)
         if (ret == gameInfo): # error with DB
             return guess_image.GAME_TYPE_PAGE
-        if (dbNotFound(gameInfo)): # cannot find game - return to game type screen
+        if (dbNotFound(result=gameInfo)): # cannot find game - return to game type screen
             return guess_image.GAME_TYPE_PAGE
         
         # Game exist in DB
         # Check user <-> game connectoin
         gameUserId = gameInfo['user']
         if (userId != gameUserId):
-            print(f'ERROR: getPageToShow: user <-> game mismatch ({user}<->{gameId})')
+            log(str=f'ERROR: getPageToShow: user <-> game mismatch ({user}<->{gameId})',logLevel=LOG_ERROR)
             return guess_image.GAME_TYPE_PAGE
 
         if (not queryParams.get('answer')):
             return guess_image.QUESTION_PAGE
         else:
             # Check answer format
-            ret = dbLibCheckAnswer(queryParams.get('answer'))
+            ret = dbLibCheckAnswer(answer=queryParams.get('answer'))
             if (ret):
                 return guess_image.ANSWER_PAGE # Question screen
             else: # answer format is invalid
                 return guess_image.QUESTION_PAGE
 
     # Show page login
-    def pageLogin(queryParams):
+    def pageLogin(queryParams) -> str:
         userName = queryParams.get('user')
         error = ''
         if userName:
-            error = showError(f'User "{userName}" not found')
+            error = showError(error=f'User "{userName}" not found')
         baseUrl = getBaseUrl()
-        log(f'Login page invoked',LOG_DEBUG)
-        return error+showLoginPage(baseUrl)
+        log(str=f'Login page invoked',logLevel=LOG_DEBUG)
+        return error+showLoginPage(baseUrl=baseUrl)
 
     # Show new user page
     def pageNewUser(queryParams):
-        log(f'New user page invoked',LOG_DEBUG)
+        log(str=f'New user page invoked',logLevel=LOG_DEBUG)
         return showNewUserPage()
 
     # Show page to choose game type
-    def pageGameType(queryParams):
-        log(f'Game type page invoked',LOG_DEBUG)
+    def pageGameType(queryParams) -> str:
+        log(str=f'Game type page invoked',logLevel=LOG_DEBUG)
         errMsg = ''
         gameId = queryParams.get('game')
         if (gameId): # 'game' parameter is present - it is incorrect one
-            ret = dbLibCheckGameId(gameId) # Check gameId format
+            ret = dbLibCheckGameId(game_id=gameId) # Check gameId format
             if (not ret): # incorrect game id
-                errMsg = showError(f'Wrong game format: {gameId}. Please start new one.')
+                errMsg = showError(error=f'Wrong game format: {gameId}. Please start new one.')
             else:
-                ret = Connection.getGameInfoById(gameId)
-                if (ret == None): # error with DB
-                    errMsg = showError('Error with DB occured. Please try again later.')
-                if (dbNotFound(ret)): # cannot find game
-                    errMsg = showError('Unknown game. Please start new one.')
-        elif (queryParams.get('type')!=None): # "game_type is present"
-            ret = dbLibCheckGameType(queryParams.get('type')) # Check format
+                ret = Connection.getGameInfoById(id=gameId)
+                if (ret is None): # error with DB
+                    errMsg = showError(error='Error with DB occured. Please try again later.')
+                if (dbNotFound(result=ret)): # cannot find game
+                    errMsg = showError(error='Unknown game. Please start new one.')
+        elif (queryParams.get('type') is not None): # "game_type is present"
+            ret = dbLibCheckGameType(game_type=queryParams.get('type')) # Check format
             if (not ret):
-                errMsg = showError('Incorrect game type "{ret}". Please start new game.')
+                errMsg = showError(error='Incorrect game type "{ret}". Please start new game.')
 
         game_types = Connection.getGameTypes()        
-        return errMsg + showGameTypePage(queryParams, game_types)
+        return errMsg + showGameTypePage(params=queryParams, game_types=game_types)
 
     # Generate new game.
     # Returns:
@@ -146,21 +146,21 @@ class guess_image:
         ret = None
         game_type = queryParams.get('type')
         game_complexity = queryParams.get('complexity')
-        if (not dbLibCheckGameType(game_type)):
-            print(f'ERROR: generateNewGame: game type is incorect ({game_type})')
+        if (not dbLibCheckGameType(game_type=game_type)):
+            log(str=f'ERROR: generateNewGame: game type is incorect ({game_type})',logLevel=LOG_ERROR)
             return None
-        if (not dbLibCheckGameComplexity(game_complexity)):
-            print(f'ERROR: generateNewGame: game complexity is incorect ({game_complexity})')
+        if (not dbLibCheckGameComplexity(game_type=game_complexity)):
+            log(str=f'ERROR: generateNewGame: game complexity is incorect ({game_complexity})',logLevel=LOG_ERROR)
             return None
         game_type = int(game_type)
         if (game_type == 1):
-            ret = guess_image.generateNewGame1(queryParams)
+            ret = guess_image.generateNewGame1(queryParams=queryParams)
         elif (game_type == 2):
-            ret = guess_image.generateNewGame2(queryParams)
+            ret = guess_image.generateNewGame2(queryParams=queryParams)
         elif (game_type == 3):
-            ret = guess_image.generateNewGame3(queryParams)
+            ret = guess_image.generateNewGame3(queryParams=queryParams)
         else:
-            print(f'ERROR: generateNewGame: unknown game type {game_type}')
+            log(str=f'ERROR: generateNewGame: unknown game type {game_type}',logLevel=LOG_ERROR)
         return ret
 
     # Extract game type 1 question options
@@ -222,7 +222,7 @@ class guess_image:
         fName = guess_image.generateNewGame1.__name__
         complexity = queryParams.get('complexity')
         if (not complexity):
-            print(f'ERROR: {fName}: Cannot get complexity: {queryParams}')
+            log(str=f'ERROR: {fName}: Cannot get complexity: {queryParams}',logLevel=LOG_ERROR)
             return None
         complexity = int(complexity)
         ret = guess_image.getRandomCreatorAndImageId(complexity=complexity)
@@ -274,38 +274,37 @@ class guess_image:
     def generateNewGame2(queryParams, gameType = 2):
         fName = guess_image.generateNewGame2.__name__
         userName = queryParams['user']
-        userId = Connection.getUserIdByName(userName)
-        if (userId == None or dbNotFound(userId)):
-            print(f'ERROR: {fName}: Cannot get user id by name {userName}')
+        userId = Connection.getUserIdByName(name=userName)
+        if (userId == None or dbNotFound(result=userId)):
+            log(str=f'ERROR: {fName}: Cannot get user id by name {userName}',logLevel=LOG_ERROR)
             return None
         # Check game type
         if (gameType != 2 and gameType != 3):
-            print(f'ERROR: {fName}: Incorrect game type provided: {gameType}')
+            log(str=f'ERROR: {fName}: Incorrect game type provided: {gameType}',logLevel=LOG_ERROR)
             return None
         complexity = int(queryParams['complexity'])
         if (not complexity):
-            print(f'ERROR: {fName}: Cannot get complexity: {queryParams}')
+            log(str=f'ERROR: {fName}: Cannot get complexity: {queryParams}',logLevel=LOG_ERROR)
             return None
-        complexity = int(complexity)
-        newGameId = guess_image.getRandomCreatorAndImageId(complexity)
+        newGameId = guess_image.getRandomCreatorAndImageId(complexity=complexity)
         if (not newGameId):
             return None # Error message is printed in getRandom function
         creatorId = newGameId[0]
         imageId = newGameId[1]
         # Get image info
-        imageInfo = Connection.getImageInfoById(imageId)
-        if (dbNotFound(imageInfo)):
-            print(f'ERROR: {fName}: Cannot get random image info (image id = {imageId})')
+        imageInfo = Connection.getImageInfoById(id=imageId)
+        if (dbNotFound(result=imageInfo)):
+            log(str=f'ERROR: {fName}: Cannot get random image info (image id = {imageId})',logLevel=LOG_ERROR)
             return None
         gameType = queryParams['type']
         # Generate game with user, type(2-3), question(image id), correct_answer (creator_id), complexity
-        newGameId = Connection.insertGame(userId,gameType,creatorId,imageId,complexity)
-        if (newGameId == None):
-            print(f'ERROR: {fName}: Cannot insert game u={userName},gt={gameType},q={imageId},ca={creatorId}')
+        newGameId = Connection.insertGame(user_id=userId,game_type=gameType,correct_answer=creatorId,question=imageId,complexity=complexity)
+        if (newGameId is None):
+            log(str=f'ERROR: {fName}: Cannot insert game u={userName},gt={gameType},q={imageId},ca={creatorId}',logLevel=LOG_ERROR)
             return None
         else:
             # Set current_game
-            Connection.setCurrentGame(userName, newGameId)
+            Connection.setCurrentGame(userName=userName, gameId=newGameId)
         return newGameId
 
     # Generate new game with type 3: guess creator of the image - no variants
@@ -316,128 +315,127 @@ class guess_image:
         return guess_image.generateNewGame2(queryParams, gameType=3)
 
     # New game creation and question page to show
-    def pageNewGame(queryParams):
-        log(f'New game page invoked',LOG_DEBUG)
+    def pageNewGame(queryParams) -> str:
+        log(str=f'New game page invoked',logLevel=LOG_DEBUG)
         errMsg = ''
-        ret = guess_image.generateNewGame(queryParams)
-        if (ret == None):
+        ret = guess_image.generateNewGame(queryParams=queryParams)
+        if (ret is None):
             errMsg = 'Cannot create new game. Issue with DB.'
-            return showErrorPage(errMsg)
+            return showErrorPage(error=errMsg)
 
         queryParams['game'] = ret
-        return guess_image.pageQuestion(queryParams)
+        return guess_image.pageQuestion(queryParams=queryParams)
 
     # Get text question
-    def getTextQuestion(gameInfo):
+    def getTextQuestion(gameInfo) -> str:
         gameType = int(gameInfo['type'])
         textQ = "Default text question"
         if gameType == 1: # Type = 1
-            imageInfo = Connection.getImageInfoById(gameInfo['correct_answer'])
-            if (dbFound(imageInfo)):
-                creatorInfo = Connection.getCreatorInfoById(imageInfo['creatorId'])
+            imageInfo = Connection.getImageInfoById(id=gameInfo['correct_answer'])
+            if (dbFound(result=imageInfo)):
+                creatorInfo = Connection.getCreatorInfoById(creatorId=imageInfo['creatorId'])
                 writeForm = ""
-                if (dbFound(creatorInfo)):
-                    if (dbIsWoman(creatorInfo['gender'])):
+                if (dbFound(result=creatorInfo)):
+                    if (dbIsWoman(gender=creatorInfo['gender'])):
                         writeForm = 'а'
-                textQ = f"Какую картину написал{writeForm} \"{imageInfo['creatorName']}\" в {imageInfo['yearStr']}?"
+                textQ = f"Какую картину написал{writeForm} \"{imageInfo['creatorName']}\"?"
         elif (gameType == 2):
-            imageInfo = Connection.getImageInfoById(gameInfo['question'])
-            if (dbFound(imageInfo)):
+            imageInfo = Connection.getImageInfoById(id=gameInfo['question'])
+            if (dbFound(result=imageInfo)):
                 textQ = f"Кто написал картину \"{imageInfo['imageName']}\" в {imageInfo['yearStr']}?"
         else: # Type = 3
-            imageInfo = Connection.getImageInfoById(gameInfo['question'])
-            if (dbFound(imageInfo)):
+            imageInfo = Connection.getImageInfoById(id=gameInfo['question'])
+            if (dbFound(result=imageInfo)):
                 textQ = f"Кто написал картину \"{imageInfo['imageName']}\" в {imageInfo['yearStr']}?"
         return textQ
 
     # Show question page
-    def pageQuestion(queryParams, errMsg1 = ''):
-        log(f'Question page invoked',LOG_DEBUG)
+    def pageQuestion(queryParams, errMsg1 = '') -> str:
+        log(str=f'Question page invoked',logLevel=LOG_DEBUG)
         # Get game from DB
         gameId = queryParams.get('game')
-        gameInfo = Connection.getGameInfoById(gameId)
-        if (gameInfo == None):
+        gameInfo = Connection.getGameInfoById(id=gameId)
+        if (gameInfo is None):
             errMsg = 'Cannot get game. Issue with DB.'
-            return showErrorPage(errMsg)
-        if (dbNotFound(gameInfo)):
+            return showErrorPage(error=errMsg)
+        if (dbNotFound(result=gameInfo)):
             errMsg = 'Cannot get game. No game found.'
-            return showErrorPage(errMsg)
+            return showErrorPage(error=errMsg)
         # Game was found
         # Check user <-> game connectoin
         userName = queryParams.get('user')
-        userId = Connection.getUserIdByName(userName)
+        userId = Connection.getUserIdByName(name=userName)
         gameUserId = gameInfo['user']
         if (userId != gameUserId):
-            errMsg = showError(f'user <-> game mismatch ({userName}<->{gameId})')
+            errMsg = showError(error=f'user <-> game mismatch ({userName}<->{gameId})')
             del queryParams['game']
-            return errMsg + guess_image.pageGameType(queryParams)
+            return errMsg + guess_image.pageGameType(queryParams=queryParams)
 
         # Get text question
-        textQuestion = guess_image.getTextQuestion(gameInfo)
+        textQuestion = guess_image.getTextQuestion(gameInfo=gameInfo)
 
         # Show question page
-        return errMsg1 + showQuestionPage(queryParams, gameInfo, textQuestion)
+        return errMsg1 + showQuestionPage(params=queryParams, gameInfo=gameInfo, textQuestion=textQuestion)
 
     # Show game list page
-    def pageGameList(queryParams):
-        log(f'Game list page invoked',LOG_DEBUG)
+    def pageGameList(queryParams) -> str:
+        log(str=f'Game list page invoked',logLevel=LOG_DEBUG)
         userName = queryParams.get('user')
-        userId = Connection.getUserIdByName(userName)
-        if (dbNotFound(userId)):
-            print(f'ERROR: pageGameList: Cannot get user id by name {userName}')
+        userId = Connection.getUserIdByName(name=userName)
+        if (dbNotFound(result=userId)):
+            log(str=f'ERROR: pageGameList: Cannot get user id by name {userName}',logLevel=LOG_ERROR)
             errMsg = f'Cannot find user {userName}'
-            return showErrorPage(errMsg)
-
+            return showErrorPage(error=errMsg)
         games = []
         list_type = ''
         if (queryParams.get('list_all')!=None):
-            games = Connection.getAllGamesList(userId)
+            games = Connection.getAllGamesList(userId=userId)
             list_type = '"all"'
         elif (queryParams.get('list_finished')!=None):
-            games = Connection.getFinishedGamesList(userId)
+            games = Connection.getFinishedGamesList(userId=userId)
             list_type = '"finished"'
         elif (queryParams.get('list_unfinished')!=None):
-            games = Connection.getUnfinishedGamesList(userId)
+            games = Connection.getUnfinishedGamesList(userId=userId)
             list_type = '"unfinished"'
         else:
             errMsg = f'Strange thing happend - cannot find list option for user {userName}'
-            return showErrorPage(errMsg)
-        return showListPage(queryParams, games, list_type)
+            return showErrorPage(error=errMsg)
+        return showListPage(params=queryParams, games=games, list_type=list_type)
 
     # Finish game
     # Returns: True/False
-    def finishGame(userName, gameId, answer):
-        ret =  Connection.finishGame(gameId, answer)
+    def finishGame(userName, gameId, answer) -> bool:
+        ret =  Connection.finishGame(gameId=gameId, answer=answer)
         if (not ret):
             return False
         # Clear current game
-        Connection.clearCurrentGame(userName)
-        Connection.clearCurrentGameData(userName)
+        Connection.clearCurrentGame(userName=userName)
+        Connection.clearCurrentGameData(userName=userName)
         return True
 
     # Check answer and return question page
     def pageAnswer(queryParams):
         userName = queryParams.get('user')
         gameId = queryParams.get('game')
-        gameInfo = Connection.getGameInfoById(gameId)
-        if (dbNotFound(gameInfo)):
-            err = showError(f'Cannot find game {gameId}')
-            return err + showGameTypePage(queryParams)
+        gameInfo = Connection.getGameInfoById(id=gameId)
+        if (dbNotFound(result=gameInfo)):
+            err = showError(error=f'Cannot find game {gameId}')
+            return err + showGameTypePage(params=queryParams)
         try:
             answer = int(queryParams.get('answer'))
         except:
-            print(f"Passed not int answer")
-            return guess_image.pageQuestion(queryParams)
-        ret = guess_image.finishGame(userName, gameId, answer)
+            log(str=f"Passed not int answer",logLevel=LOG_ERROR)
+            return guess_image.pageQuestion(queryParams=queryParams)
+        ret = guess_image.finishGame(userName=userName, gameId=gameId, answer=answer)
         if ret:
-            gameInfo = Connection.getGameInfoById(gameId)
-            if (dbNotFound(gameInfo)):
-                err = showError(f'Cannot find game {gameId}')
-                return err + showGameTypePage(queryParams)
-            ret = guess_image.pageQuestion(queryParams) # Result page
+            gameInfo = Connection.getGameInfoById(id=gameId)
+            if (dbNotFound(result=gameInfo)):
+                err = showError(error=f'Cannot find game {gameId}')
+                return err + showGameTypePage(params=queryParams)
+            ret = guess_image.pageQuestion(queryParams=queryParams) # Result page
         else:
-            err = showError(f'Cannot apply answer for game {gameId}. Please try again.')
-            ret = guess_image.pageQuestion(queryParams,err)
+            err = showError(error=f'Cannot apply answer for game {gameId}. Please try again.')
+            ret = guess_image.pageQuestion(queryParams=queryParams,errMsg1=err)
         return ret
 
     # Entry point for game
@@ -446,29 +444,29 @@ class guess_image:
         newUser = queryParams.get('newuser')
         registerUser = queryParams.get('registeruser')
         userName = queryParams.get('user')
-        if (newUser != None): # Register page
-            ret = guess_image.pageNewUser(queryParams)
-        elif (registerUser != None): # Create new user
+        if (newUser is not None): # Register page
+            ret = guess_image.pageNewUser(queryParams=queryParams)
+        elif (registerUser is not None): # Create new user
             if (not userName):
-                errMsg = showError("Need to pass user name")
-                ret = errMsg + guess_image.pageLogin(queryParams)
+                errMsg = showError(error="Need to pass user name")
+                ret = errMsg + guess_image.pageLogin(queryParams=queryParams)
             else:
                 # New User registragion
-                if (not checkUserNameFormat(userName)):
-                    errMsg = showError('Username must conatin letters and digits only started wtih letter')
-                    ret = errMsg + guess_image.pageNewUser(queryParams)
+                if (not checkUserNameFormat(user=userName)):
+                    errMsg = showError(error='Username must conatin letters and digits only started wtih letter')
+                    ret = errMsg + guess_image.pageNewUser(queryParams=queryParams)
                 else:
                     # Add new user
-                    result = Connection.insertUser(userName)
+                    result = Connection.insertUser(userName=userName)
                     if (not result):
-                        errMsg = showError(f"Something wrong with user {userName} registration. Please try again.")
-                        ret = errMsg + guess_image.pageNewUser(queryParams)
+                        errMsg = showError(error=f"Something wrong with user {userName} registration. Please try again.")
+                        ret = errMsg + guess_image.pageNewUser(queryParams=queryParams)
                     else:
                         # User registration successful
                         # Return game type page
-                        ret = guess_image.pageGameType(queryParams)
+                        ret = guess_image.pageGameType(queryParams=queryParams)
         else: # Other actions
-            ret = guess_image.getNextPage(queryParams)
+            ret = guess_image.getNextPage(queryParams=queryParams)
         return ret
 
     def getNextPage(queryParams):
@@ -480,6 +478,6 @@ class guess_image:
                   guess_image.pageNewGame,
                   guess_image.pageAnswer,
                   guess_image.pageNewUser]
-        page = guess_image.getPageToShow(queryParams)
+        page = guess_image.getPageToShow(queryParams=queryParams)
         result = routes[page](queryParams)
         return result
