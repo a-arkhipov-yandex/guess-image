@@ -1,4 +1,3 @@
-
 from os import path
 from os import getenv, environ
 from dotenv import load_dotenv
@@ -32,14 +31,14 @@ class GuessImageLog:
     logHandle = None
     printToo = False
 
-    def logFileRotation(logFile):
+    def logFileRotation(logFile) -> None:
         # Check if log file exist
         if (path.isfile(logFile)):
             # Copy existing file and add '.bak' at the end
             shutil.copyfile(logFile, logFile + '.bak')
 
     # Log startup attempt
-    def logStart():
+    def logStart() -> None:
         load_dotenv()
         # Read logStartFile from env
         logFile = getenv(ENV_LOGSTARTFILE)
@@ -51,10 +50,11 @@ class GuessImageLog:
             startTime = dt.now(tzinfo).strftime("%d-%m-%Y %H:%M:%S")
             f.write(f'{startTime}: GuessImage_bot started'+"\n")
         except Exception as error:
-            log(f'Cannot open "{logFile}": {error}', LOG_ERROR)
+            log(str=f'Cannot open "{logFile}": {error}', logLevel=LOG_ERROR)
+            return
         f.close()
 
-def initLog(logFile=None, printToo=False):
+def initLog(logFile=None, printToo=False) -> None:
     load_dotenv()
     if (not logFile):
         # Read logFile from env
@@ -73,19 +73,19 @@ def initLog(logFile=None, printToo=False):
     printTooEnv = getenv(ENV_PRINTTOO)
     if (printTooEnv and printTooEnv == 'True'):
         printToo = True
-    GuessImageLog.logFileRotation(logFile)
+    GuessImageLog.logFileRotation(logFile=logFile)
     # Open log file for writing
     try:
         f = open(logFile, 'w')
         GuessImageLog.logHandle = f
     except Exception as error:
-        log(f'Cannot open "{logFile}": {error}', LOG_ERROR)
+        log(str=f'Cannot open "{logFile}": {error}', logLevel=LOG_ERROR)
     if (printToo == True):
         GuessImageLog.printToo = printToo
     GuessImageLog.logStart()
-    log(f'Log initialization complete: log file={GuessImageLog.logFileName} | log level={GuessImageLog.logCurrentLevel}')
+    log(str=f'Log initialization complete: log file={GuessImageLog.logFileName} | log level={GuessImageLog.logCurrentLevel}')
 
-def log(str, logLevel=LOG_INFO):
+def log(str, logLevel=LOG_INFO) -> None:
     # Check log level first
     if (LOG_LEVELS[logLevel] > LOG_LEVELS[GuessImageLog.logCurrentLevel]):
         return # Do not print
@@ -102,6 +102,7 @@ def log(str, logLevel=LOG_INFO):
         if (GuessImageLog.printToo == True):
             print(logStr)
 
-def closeLog():
+def closeLog() -> None:
     if (GuessImageLog.logHandle):
         GuessImageLog.logHandle.close()
+        GuessImageLog.logHandle = None
