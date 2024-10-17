@@ -1,4 +1,3 @@
-import telebot
 from telebot import types
 from random import shuffle
 import telegram
@@ -167,7 +166,7 @@ def ibotRequestComplexity(bot, message) -> None:
     question = 'Выберите уровень сложности:'
     bot.send_message(message.from_user.id, text=question, reply_markup=keyboard)
 
-def ibotShowQuestion(bot,message,type,gameId) -> None:
+def ibotShowQuestion(bot,message:types.Message,type,gameId) -> None:
     if (type == 1):
         ibotShowQuestionType1(bot=bot,message=message, gameId=gameId)
     elif (type == 2):
@@ -189,7 +188,7 @@ def ibotFindNumOfType1Answer(imageIds, correctId):
             break
     return ret
 
-def ibotShowQuestionType1(bot,message, gameId) -> None:
+def ibotShowQuestionType1(bot,message:types.Message, gameId) -> None:
     # Get gameInfo
     gameInfo = Connection.getGameInfoById(id=gameId)
     finished = (gameInfo['result'] != None)
@@ -246,7 +245,7 @@ def ibotModifyImageCaptures(bot, message, mIds, imageIds) -> None:
     for i in range(0, len(mIds)):
         ibotModifyImageCapture(bot=bot, message=message, messageId=mIds[i], imageId=imageIds[i])
 
-def ibotModifyImageCapture(bot, message, messageId, imageId) -> None:
+def ibotModifyImageCapture(bot, message:types.Message, messageId, imageId) -> None:
     # Get image info
     imageInfo = Connection.getImageInfoById(id=imageId)
     if (dbFound(result=imageInfo)):
@@ -256,7 +255,7 @@ def ibotModifyImageCapture(bot, message, messageId, imageId) -> None:
     else:
         log(str=f'{ibotModifyImageCapture.__name__}: Cannot get image info for {imageId}', logLevel=LOG_ERROR)
 
-def ibotShowQuestionType2(bot,message, gameId, gameType = 2) -> None:
+def ibotShowQuestionType2(bot,message:types.Message, gameId, gameType = 2) -> None:
     # Get gameInfo
     gameInfo = Connection.getGameInfoById(id=gameId)
     complexity = gameInfo['complexity']
@@ -304,7 +303,7 @@ def ibotShowQuestionType3(bot,message, gameId) -> None:
     return ibotShowQuestionType2(bot=bot, message=message, gameId=gameId, gameType=3)
 
 
-def ibotCheckAnswerGameType3(userCreatorName, correctCreatorName) -> bool:
+def ibotCheckAnswerGameType3(userCreatorName:str, correctCreatorName:str) -> bool:
     # 1. Convern both strings to the same format
     userCreatorName = userCreatorName.lower() # Convert to lower
     correctCreatorName = correctCreatorName.lower()
@@ -359,5 +358,4 @@ def ibotCheckAnswerGameType3(userCreatorName, correctCreatorName) -> bool:
     if (ret):
         log(str=f'Full answer similarity (similarity={ret}: {userCreatorName} | {correctCreatorName}',logLevel=LOG_DEBUG)
         return True
-
     return ret
