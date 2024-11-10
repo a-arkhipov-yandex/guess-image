@@ -11,12 +11,12 @@ from log_lib import *
 # Main section
 #---------------
 def main() -> None:
-    updateAll = False
+    updateAll = True
     updateS3 = True
     updateDB = True
     cleanupDB = True
-    updateCSV = True
-
+    updateCSV = False
+ 
     prodDb = True
     initLog(printToo=True)
     # Need to read dir and fill out paintings data
@@ -48,21 +48,6 @@ def main() -> None:
         exit()
 
     # Put your adhoc code here!
-    yearRange = guess_image.getImageCreationRange(intYear=1888)
-    for j in range(1000):
-        images = Connection.getRandomImageIdsOfOtherCreators(creatorId=2, complexity=3, n=3, range=yearRange)
-        #print(images)
-        flag = False
-        for i in images:
-            imageInfo = Connection.getImageInfoById(id=i[0])
-            creatorId = imageInfo['creatorId']
-            if (creatorId == 2):
-                flag = True
-                break
-        if (flag):
-            print(f'Found: {images}')
-            break
-    
 
     if ((updateDB or cleanupDB or updateCSV) and updateAll):
 

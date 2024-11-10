@@ -342,11 +342,11 @@ class guess_image:
         elif (gameType == 2):
             imageInfo = Connection.getImageInfoById(id=gameInfo['question'])
             if (dbFound(result=imageInfo)):
-                textQ = f"Кто написал картину \"{imageInfo['imageName']}\" в {imageInfo['yearStr']}?"
+                textQ = f"Кто написал картину \"{imageInfo['imageName']}\"?"
         else: # Type = 3
             imageInfo = Connection.getImageInfoById(id=gameInfo['question'])
             if (dbFound(result=imageInfo)):
-                textQ = f"Кто написал картину \"{imageInfo['imageName']}\" в {imageInfo['yearStr']}?"
+                textQ = f"Кто написал картину \"{imageInfo['imageName']}\"?"
         return textQ
 
     # Show question page
