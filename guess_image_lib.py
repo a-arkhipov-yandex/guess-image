@@ -30,14 +30,14 @@ ENV_TESTBOT = 'TESTBOT'
 
 MIN_SIMILARITY = 3
 
-def isStrSimilar(str1,str2):
-    dist = getStrDistance(str1,str2)
+def isStrSimilar(str1,str2) -> bool:
+    dist = getStrDistance(str1=str1,str2=str2)
     return dist <= MIN_SIMILARITY
 
-def getStrDistance(str1, str2):
+def getStrDistance(str1, str2) -> int:
     return distance(str1, str2)
 
-def isTestBot():
+def isTestBot() -> bool:
     load_dotenv()
     ret = True
     testbot = getenv(ENV_TESTBOT)
@@ -105,26 +105,26 @@ def readCSV(fileName):
     return data
 
 def readCreatorsCSV():
-    creators = readCSV(CREATORS_FILE_CVS)
+    creators = readCSV(fileName=CREATORS_FILE_CVS)
     resCreators = []
     # Check and transform
     for creator in creators:
         id = creator.get('id')
         if (not id):
-            log(f'No ID in CSV file: {creator}',LOG_ERROR)
+            log(str=f'No ID in CSV file: {creator}',logLevel=LOG_ERROR)
             continue
         name = creator.get('name')
         if (not name):
-            log(f'No Name in CSV file: {creator}',LOG_ERROR)
+            log(str=f'No Name in CSV file: {creator}',logLevel=LOG_ERROR)
             continue
         complexity = creator.get('complexity')
         if (not complexity):
-            log(f'No Complexity in CSV file: {creator}',LOG_ERROR)
+            log(str=f'No Complexity in CSV file: {creator}',logLevel=LOG_ERROR)
             continue
 
         newCreator = {}
         newCreator['id'] = int(id)
-        newCreator['name'] = name
+        newCreator['name'] = adjustText(text=name)
         newCreator['complexity'] = int(complexity)
         gender = None
         if (creator.get('gender')):
@@ -214,7 +214,7 @@ def buildImgUrl(base_url, creator, title, year):
 #   0 - year is too small or too big
 def getYear(rawYear):
     retYear = 0
-    year = removeYearSigns(rawYear)
+    year = removeYearSigns(rawYear=rawYear)
     if (year == None):
         return False
     if year[-1] == 'е':
@@ -222,17 +222,17 @@ def getYear(rawYear):
     lYear = len(year)
     if (lYear == 4):
         # Check that this is real year
-        retYear = myInt(year)
+        retYear = myInt(str=year)
         if not retYear:
-            log(f'Problem with int conversion - {year}',LOG_ERROR)
+            log(str=f'Problem with int conversion - {year}',logLevel=LOG_ERROR)
             return False
     elif (lYear == 9):
         years = year.split('-')
         if (len(years) != 2):
-            log(f'Cannot split years - {year}',LOG_ERROR)
+            log(str=f'Cannot split years - {year}',logLevel=LOG_ERROR)
             return False
-        year1 = myInt(years[0])
-        year2 = myInt(years[1])
+        year1 = myInt(str=years[0])
+        year2 = myInt(str=years[1])
         if ((not year1) or (not year2)):
             log(str=f'Problem with int conversion 2 - {year}',logLevel=LOG_ERROR)
             return False

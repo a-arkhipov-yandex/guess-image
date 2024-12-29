@@ -1588,11 +1588,12 @@ class Connection:
             # Get creator's info from DB
             if (not Connection.findAndCompareCreators(creatorsInDB=creatorsInDB, creator=creator)):
                     # Update creator in DB
+                    log(str=f'updateCreatorsFromCSV: Updating creator: {creator}')
                     Connection.updateCreator(creator=creator)
 
     def findAndCompareCreators(creatorsInDB: list, creator: dict) -> bool:
         for dbCreator in creatorsInDB:
-            if (dbCreator.get('id') == creator.get('id')):
+            if (dbCreator.get('name') == creator.get('name')):
                 res = Connection.compareCreatorInfo(creator=creator, dbCreator=dbCreator)
                 if (res):
                     return True

@@ -1,4 +1,4 @@
-from os import listdir, system
+from os import listdir, system, rename
 from guess_image_lib import *
 from PIL import Image
 
@@ -88,3 +88,20 @@ def buildImgLocalFileName(creator, name, year) -> str:
     imageName = buildImgName(creator=creator,name=name,year=year)
     url = f'{imageName}{LOCAL_EXT}'
     return url
+
+# Adjust all files on disk
+def adjustAllFilesOnDisk(creators, titles, years) -> None:
+    c = 0
+    for i in range(len(creators)):
+        creator = creators[i]
+        title = titles[i]
+        year = years[i]
+        filename_old = getImageFullPath(creator=creator, title=title, year=year)
+        creator = adjustText(text=creator)
+        title = adjustText(text=title)
+        filename_new = getImageFullPath(creator=creator, title=title, year=year)
+        if creator != creators[i] or title != titles[i]:
+            c += 1
+            print(f'Renaming: {filename_old} -> {filename_new}')
+            rename(src=filename_old, dst=filename_new)
+    print(f'Total files renamed: {c}')

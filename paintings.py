@@ -30,6 +30,8 @@ def main() -> None:
     crNum = len(set(creators))
     log(str=f"Total number of creators: {crNum}",logLevel=LOG_DEBUG)
 
+    adjustAllFilesOnDisk(creators=creators, titles=titles, years=years)
+
     #checkUrls(creators, titles, years)
     if (updateS3 and updateAll):
         t = time.time()
@@ -52,13 +54,13 @@ def main() -> None:
     if ((updateDB or cleanupDB or updateCSV) and updateAll):
 
         if (updateDB):
-            log(str='Updating DB 1')
+            log(str='Updating DB')
             t = time.time()
             Connection.updateDB(creators=creators, titles=titles, years=years, intYears=intYears, orientations=orientations)
             tDiff = int(time.time() - t)
             log(str=f"updateDB: {tDiff} seconds")
         if (cleanupDB):
-            log(str='Updating DB 2')
+            log(str='Cleanup DB')
             t = time.time()
             Connection.updateDB2(creators=creators, titles=titles, years=years, intYears=intYears, orientations=orientations)
             tDiff = int(time.time() - t)

@@ -386,7 +386,7 @@ def ibotPhotoHandle(bot:telebot.TeleBot, userName, telegramid, file_info:telegra
     # Clear image info in DB
     Connection.clearCurrentImageInfo(userName=userName)
 
-    #text = adjustText(text=text)
+    text = adjustText(text=text)
     info = parseCreatorAndImageInfo(text=text)
     if (info is None):
         log(str=f'{fName}: Cannot parse creator and image data from "{text}"',logLevel=LOG_ERROR)
