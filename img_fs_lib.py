@@ -3,6 +3,9 @@ from guess_image_lib import *
 from PIL import Image
 
 IMAGE_DIR = "/Users/a-arkhipov/Yandex.Disk.localized/Images/Картины/"
+LOCAL_EXT = ".jpg"
+
+DEFAULT_SAVE_IMAGE_DIR = "/Users/a-arkhipov/Downloads/SavedBotImages/"
 
 # Build image full path name
 def buildImgPathName(imgName):
@@ -59,9 +62,9 @@ def getImgs():
 
     return [creators, titles, years, intYears, orientation]
 
-def getImageFullPath(creator, title, year):
-    file = buildImgName(creator, title, year)
-    fullPath = buildImgPathName(file)
+def getImageFullPath(creator, title, year) -> str:
+    file = buildImgName(creator=creator, name=title, year=year)
+    fullPath = buildImgPathName(imgName=file) + LOCAL_EXT
     return fullPath
 
 # Get image orientation
@@ -72,3 +75,16 @@ def getImageOrientation(file):
         return 2
     return 1
  
+ # Build image name from parts
+def buildImgName(creator, name, year) -> str:
+    yearTxt = ''
+    if (str(year) != '0'):
+        yearTxt = f' - {year}'
+    imageName = f'{creator} - {name}{yearTxt}'
+    return imageName
+
+# Build image file name from parts
+def buildImgLocalFileName(creator, name, year) -> str:
+    imageName = buildImgName(creator=creator,name=name,year=year)
+    url = f'{imageName}{LOCAL_EXT}'
+    return url

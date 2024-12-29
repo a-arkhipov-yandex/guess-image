@@ -164,7 +164,7 @@ def checkUserNameFormat(user):
     return ret
 
 # Build image name from parts
-def buildImgName(creator, title, year):
+def buildImgFileName(creator, title, year):
     url = ' '.join([creator,'-',title,'-',year]) + EXT
     return url
 
@@ -201,7 +201,7 @@ def myInt(str):
 # Build URL to image
 def buildImgUrl(base_url, creator, title, year):
     space = '%20'
-    url1 = base_url + buildImgName(creator, title, year)
+    url1 = base_url + buildImgFileName(creator=creator, title=title, year=year)
 
     url = url1.replace(' ', space)
 
@@ -234,11 +234,48 @@ def getYear(rawYear):
         year1 = myInt(years[0])
         year2 = myInt(years[1])
         if ((not year1) or (not year2)):
-            log(f'Problem with int conversion 2 - {year}',LOG_ERROR)
+            log(str=f'Problem with int conversion 2 - {year}',logLevel=LOG_ERROR)
             return False
         retYear = int((year2+year1)/2) # return average
     
     if ((retYear < 1000) or (retYear > 2030)):
-        log(f'Year is out of range: {rawYear}',LOG_ERROR)
+        log(str=f'Year is out of range: {rawYear}',logLevel=LOG_ERROR)
         retYear = 0
     return retYear 
+
+def adjustText(text:str) -> str:
+    if (not text):
+        return text
+    text = text.replace('ё','е') # Replace 'ё'ё
+    text = text.replace('ё','е') # Replace 'ё' another ё
+    text = text.replace('й','й') # Replace 'й'
+    return text
+
+def parseCreatorAndImageInfo(text:str):
+    tmp = text.split(sep=" - ")
+    if len(tmp) != 3:
+        log(str=f"ERROR: Wrong numer of items: {tmp}", logLevel=LOG_ERROR)
+        return None
+    creator = tmp[0].strip()
+    if creator != tmp[0]:
+        log(str=f'Spaces in creator: {tmp}', logLevel=LOG_ERROR)
+        return None
+    title = tmp[1].strip()
+    if title != tmp[1]:
+        log(str=f'Spaces in title: {tmp}', logLevel=LOG_ERROR)
+        return None
+    year = tmp[2].strip()
+    if year != tmp[2]:
+        log(str=f'Spaces in year: {tmp}', logLevel=LOG_ERROR)
+        return None
+    intYear = getYear(rawYear=year)
+    if (not intYear):
+        log(str=f'Cannet get int year: "{tmp}"', logLevel=LOG_ERROR)
+        return None
+    return creator, title, year, intYear
+
+# Build image file name from parts
+def buildImgS3FileName(creator, name, year) -> str:
+    imageName = buildImgFileName(creator=creator,title=name,year=year)
+    url = f'{imageName}'
+    return url

@@ -5,7 +5,6 @@ from gibot_lib import *
 from log_lib import *
 import requests
 
-
 TESTCONNECTION = isTestDB()
 TESTBOT = isTestBot()
 
@@ -16,17 +15,49 @@ if (not botToken):
 bot = telebot.TeleBot(token=botToken)
 
 # Message handler
+@bot.message_handler(content_types=['photo'])
+def get_photo_messages(message:types.Message) -> None:
+    fName = get_photo_messages.__name__
+    if (not TESTBOT):
+        log(str=f'{fName}: Got photo message in PROD: Not supported', logLevel=LOG_WARNING)
+        return
+    log(str=f'{fName}: Got photo message')
+    # Start thread to handle file
+    fileID = message.photo[-1].file_id
+    file_info = bot.get_file(file_id=fileID)
+    thread = Thread(target=ibotPhotoHandle, args=[bot, message.from_user.username, message.from_user.id, file_info])
+    thread.start()
+    log(str=f'{fName}: Started thread to handle photo')
+
+# Message handler
 @bot.message_handler(content_types=['text'])
-def get_text_messages(message) -> None:
+def get_text_messages(message:types.Message) -> None:
+    fName = get_text_messages.__name__
     # Check if there is cmd
     if (message.text[0] == '/'):
         return cmdHandler(message=message)
     elif (ibotCheckGameTypeNInProgress(bot=bot, message=message, gameType=3)):
         return gameType3AnswerHanderl(bot=bot, message=message)
+    else:
+        if (TESTBOT):
+            # Check if image was sent previously
+            imageInfo = message.text
+            log(str=f'{fName}: Image info to save: {imageInfo}')
+            # Save data to DB
+            res = Connection.setCurrentImageInfo(userName=message.from_user.username, imageInfo=imageInfo)
+            if (not res):
+                m = f'Cannot save image info: {imageInfo}'
+                log(str=f'{fName}: {m}', logLevel=LOG_ERROR)
+                bot.send_message(chat_id=message.from_user.id, text=m)
+            else:
+                m = f'Image info saved: {imageInfo}'
+                log(str=f'{fName}: {m}')
+                bot.send_message(chat_id=message.from_user.id, text=m)
+            return        
     bot.send_message(chat_id=message.from_user.id, text='Я вас не понимаю:(.')
     bot.send_message(chat_id=message.from_user.id, text=ibotGetHelpMessage(userName=message.from_user.username))
 
-def cmdHandler(message) -> None:
+def cmdHandler(message:types.Message) -> None:
     if message.text == CMD_START:
         ret = startNewGame(message=message)
         #bot.send_message(message.from_user.id, ret)
@@ -162,7 +193,7 @@ def gameType2AnswerHanderl(message: types.CallbackQuery) -> None:
     correctMessage = f'Эту картину написал{writeForm} {correctAnswer}.'
     ibotShowGameResult(bot=bot, message=message, result=result, correctAnswer=correctAnswer, correctMessage=correctMessage)
 
-def gameType3AnswerHanderl(bot, message: types.Message) -> None:
+def gameType3AnswerHanderl(bot:telebot.TeleBot, message: types.Message) -> None:
     userName = getUserByMessage(message=message)
     # Check user name format first
     if (not ibotCheckUserName(bot=bot, message=message)):
@@ -245,7 +276,7 @@ def gameType1AnswerHanderl(message: types.CallbackQuery) -> None:
                        correctMessage=correctMessage, correctAnswerNum=correctAnswerNum)
 
 # Show game result
-def ibotShowGameResult(bot, message, result, correctAnswer, correctMessage='', correctAnswerNum=None) -> None:
+def ibotShowGameResult(bot:telebot.TeleBot, message:types.Message, result, correctAnswer, correctMessage='', correctAnswerNum=None) -> None:
     # Check result
     correctAnswerTxt = ''
     if (correctAnswerNum):
@@ -253,13 +284,13 @@ def ibotShowGameResult(bot, message, result, correctAnswer, correctMessage='', c
 
     if (result):
         # Answer is correct
-        bot.send_message(message.from_user.id, text=f'Поздравляю! Вы ответили верно. {correctMessage}{correctAnswerTxt}')
+        bot.send_message(chat_id=message.from_user.id, text=f'Поздравляю! Вы ответили верно. {correctMessage}{correctAnswerTxt}')
     else:
         correctAnswerTxt = ''
         if (correctAnswerNum):
             correctAnswerTxt = f' под номером {correctAnswerNum}'
 
-        bot.send_message(message.from_user.id, text=f'А вот и не верно. Верный ответ{correctAnswerTxt}: "{correctAnswer}"')
+        bot.send_message(chat_id=message.from_user.id, text=f'А вот и не верно. Верный ответ{correctAnswerTxt}: "{correctAnswer}"')
     
     ibotSendAfterAnswer(bot=bot, message=message)
 

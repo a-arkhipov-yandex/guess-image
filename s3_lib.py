@@ -13,6 +13,7 @@ def buildUploadCmd(imgName):
 # Upload image to Bucket
 def uploadImg(imgName) -> int:
     cmd = buildUploadCmd(imgName=imgName)
+    print(cmd)
     return system(cmd)
 
 def getImgsInBucket():    
@@ -48,11 +49,11 @@ def bulkUpload(creators, titles, years):
 
     for i in range(0, len(creators)):
         # Check is img is in bucket
-        imgName = buildImgName(creators[i], titles[i], years[i])
-        if (not checkImgInBucket(imgName, imgsInBucket)):
+        imgName = buildImgFileName(creator=creators[i], title=titles[i], year=years[i])
+        if (not checkImgInBucket(imgName=imgName, imgsInBucket=imgsInBucket)):
             # upload image to bucket
             print(f"Uploading {imgName}")
-            ret = uploadImg(imgName)
+            ret = uploadImg(imgName=imgName)
             if (ret != 0):
                 # Fail
                 print(f'ERROR: Cannot upload image {imgName}. Returned: {ret}')

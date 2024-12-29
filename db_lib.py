@@ -987,6 +987,7 @@ class Connection:
         fName = Connection.insertGame.__name__
         # Checks first
         if (not dbLibCheckUserId(user_id=user_id)):
+            log(str=f'{fName}: Cannot insert game for user {user_id} - wrong user ID',logLevel=LOG_ERROR)
             return None
         if (not dbLibCheckGameType(game_type=game_type)):
             return None
@@ -1354,6 +1355,62 @@ class Connection:
                 ret = True
             except (Exception, psycopg2.DatabaseError) as error:
                 log(str=f'{fName}: Failed update current game (gameId = {gameId}, user={userName}): {error}',logLevel=LOG_ERROR)
+        return ret
+
+    # Get current image info for user userName
+    # Returns:
+    # id - current game id
+    # None - no current game
+    def getCurrentImageInfo(userName):
+        fName = Connection.getCurrentImageInfo.__name__
+        ret = dbLibCheckUserName(user_name=userName)
+        if (not ret):
+            log(str=f'{fName}: Incorrect user {userName} provided',logLevel=LOG_ERROR)
+            return None
+        userId = Connection.getUserIdByName(name=userName)
+        if (dbNotFound(result=userId)):
+            log(str=f'{fName}: Cannot find user {userName}',logLevel=LOG_ERROR)
+            return None
+        ret = None
+        query = 'select image_info from users where id=%(uId)s'
+        currentImageInfo = Connection.executeQuery(query=query, params={'uId':userId})
+        if (dbFound(result=currentImageInfo)):
+            currentImageInfo = currentImageInfo[0]
+            if (currentImageInfo):
+                ret = currentImageInfo
+        return ret
+
+    def setCurrentImageInfo(userName, imageInfo) -> bool:
+        return Connection.updateCurrentImageInfo(userName=userName, imageInfo=imageInfo)
+
+    def clearCurrentImageInfo(userName) -> bool:
+        return Connection.updateCurrentImageInfo(userName=userName, imageInfo=None)
+
+    # Update image_info for the userId
+    # Returns: True - update successful / False - otherwise
+    def updateCurrentImageInfo(userName, imageInfo) -> bool:
+        fName = Connection.updateCurrentImageInfo.__name__
+        if (not Connection.isActive() and not Connection.reconnect()):
+            log(str=f"{fName}: connection is not initialized",logLevel=LOG_ERROR)
+            return False
+        ret = dbLibCheckUserName(user_name=userName)
+        if (not ret):
+            log(str=f'{fName}: Incorrect user {userName} provided',logLevel=LOG_ERROR)
+            return False
+        userId = Connection.getUserIdByName(name=userName)
+        if (dbNotFound(result=userId)):
+            log(str=f'{fName}: Cannot find user {userName}',logLevel=LOG_ERROR)
+            return False
+        ret = False
+        conn = Connection.getConnection()
+        with conn.cursor() as cur:
+            query = 'update users set image_info=%(gd)s where id = %(uId)s'
+            try:
+                cur.execute(query=query,vars={'gd':imageInfo,'uId':userId})
+                log(str=f'{fName}: Updated current game info: (user={userName} | imageInfo = {imageInfo})')
+                ret = True
+            except (Exception, psycopg2.DatabaseError) as error:
+                log(str=f'{fName}: Failed update current image info (imageInfo = {imageInfo}, user={userName}): {error}',logLevel=LOG_ERROR)
         return ret
 
     # Get current game data for user userName

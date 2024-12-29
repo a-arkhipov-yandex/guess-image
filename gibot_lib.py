@@ -1,12 +1,15 @@
 from telebot import types
 from random import shuffle
 import telegram
+import telebot
 
 VERSION='2.01'
 
 from db_lib import *
 from game_lib import *
 from log_lib import *
+from img_fs_lib import *
+from s3_lib import *
 
 IBOT_COMPLEXITY_ANSWER = 'complexity:'
 IBOT_TYPE1_ANSWER = 'type1answer:'
@@ -16,6 +19,15 @@ IBOT_GAMETYPE_ANSWER = 'gametype:'
 CMD_START = '/start'
 CMD_HELP = '/help'
 CMD_SETTINGS = '/settings'
+
+ENV_BOTSAVEIMAGEPATH = 'BOTSAVEIMAGEPATH'
+
+def getBotImagePath() -> str:
+    load_dotenv()
+    imagePath = getenv(key=ENV_BOTSAVEIMAGEPATH)
+    if (not imagePath):
+        imagePath = DEFAULT_SAVE_IMAGE_DIR
+    return imagePath
 
 # Returns help message
 def ibotGetHelpMessage(userName) -> str:
@@ -36,7 +48,7 @@ def ibotIsUserExist(userName) -> bool:
         return False
     return True
 
-def getUserByMessage(message:telegram.Message):
+def getUserByMessage(message:types.Message):
     username = message.from_user.username
     telegramid = message.from_user.id
     ret = str(telegramid)
@@ -45,12 +57,12 @@ def getUserByMessage(message:telegram.Message):
     return ret
 
 # Check username. Return True on success of False on failure
-def ibotCheckUserName(bot, message:telegram.Message) -> bool:
+def ibotCheckUserName(bot:telebot.TeleBot, message:telegram.Message) -> bool:
     userName = getUserByMessage(message=message)
     # Check that user exists in DB
     if (not ibotIsUserExist(userName=userName)):
         bot.send_message(
-            message.from_user.id,
+            chat_id=message.from_user.id,
             text=f'Пользователь не зарегистрирован. Наберите "{CMD_START}".'
         )
         return False
@@ -97,12 +109,12 @@ def ibotGetWelcomeMessage(userName) -> str:
     return ret
 
 # Settings section
-def ibotSettings(bot, message) -> None:
+def ibotSettings(bot:telebot.TeleBot, message:types.Message) -> None:
     ibotRequestGameType(bot=bot, message=message)
 
 # Check that game type gameType is in progress
 # Returns: True/False
-def ibotCheckGameTypeNInProgress(bot, message, gameType) -> bool:
+def ibotCheckGameTypeNInProgress(bot:telebot.TeleBot, message:types.Message, gameType) -> bool:
     fName = ibotCheckGameTypeNInProgress.__name__
     userName = getUserByMessage(message=message)
     # Check user name format first
@@ -135,7 +147,7 @@ def ibotUserRegister(userName) -> bool:
     return True
 
 # Request new GameType
-def ibotRequestGameType(bot, message) -> None:
+def ibotRequestGameType(bot:telebot.TeleBot, message:types.Message) -> None:
     # Check user name format first
     ret = ibotCheckUserName(bot=bot, message=message)
     if (not ret):
@@ -148,10 +160,10 @@ def ibotRequestGameType(bot, message) -> None:
         key = types.InlineKeyboardButton(text=gameType[1], callback_data=f'{IBOT_GAMETYPE_ANSWER}{gameType[0]}')
         keyboard.add(key)
     question = 'Выберите тип игры:'
-    bot.send_message(message.from_user.id, text=question, reply_markup=keyboard)
+    bot.send_message(chat_id=message.from_user.id, text=question, reply_markup=keyboard)
 
 # Start new game
-def ibotRequestComplexity(bot, message) -> None:
+def ibotRequestComplexity(bot:telebot.TeleBot, message:types.Message) -> None:
     # Check user name format first
     ret = ibotCheckUserName(bot=bot, message=message)
     if (not ret):
@@ -164,9 +176,9 @@ def ibotRequestComplexity(bot, message) -> None:
         keys.append(key)
     keyboard = types.InlineKeyboardMarkup(keyboard=[keys]); # keyboard
     question = 'Выберите уровень сложности:'
-    bot.send_message(message.from_user.id, text=question, reply_markup=keyboard)
+    bot.send_message(chat_id=message.from_user.id, text=question, reply_markup=keyboard)
 
-def ibotShowQuestion(bot,message:types.Message,type,gameId) -> None:
+def ibotShowQuestion(bot:telebot.TeleBot,message:types.Message,type,gameId) -> None:
     if (type == 1):
         ibotShowQuestionType1(bot=bot,message=message, gameId=gameId)
     elif (type == 2):
@@ -174,7 +186,7 @@ def ibotShowQuestion(bot,message:types.Message,type,gameId) -> None:
     elif (type == 3): # type = 3
         ibotShowQuestionType3(bot=bot,message=message, gameId=gameId)
     else:
-        bot.send_message(message.from_user.id, "Неизваестный тип игры. Пожалуйста, начните новую игру.")
+        bot.send_message(chat_id=message.from_user.id, text="Неизвестный тип игры. Пожалуйста, начните новую игру.")
     
 # Find number of correct answer in type 1 question
 # Returns:
@@ -188,17 +200,17 @@ def ibotFindNumOfType1Answer(imageIds, correctId):
             break
     return ret
 
-def ibotShowQuestionType1(bot,message:types.Message, gameId) -> None:
+def ibotShowQuestionType1(bot:telebot.TeleBot,message:types.Message, gameId) -> None:
     # Get gameInfo
     gameInfo = Connection.getGameInfoById(id=gameId)
     finished = (gameInfo['result'] != None)
     if (finished):
-        bot.send_message(message.from_user.id, text=f'Извините, но игра уже завершена. Введите "{CMD_START}" чтобы начать новую.')
+        bot.send_message(chat_id=message.from_user.id, text=f'Извините, но игра уже завершена. Введите "{CMD_START}" чтобы начать новую.')
         return
     imageIds = guess_image.getQuestionType1Options(gameInfo=gameInfo)
     if (not imageIds):
         log(str=f'{ibotShowQuestionType1.__name__}: wrong format of imageIds = {imageIds}', logLevel=LOG_ERROR)
-        bot.send_message(message.from_user.id, "Произошла ошибка. Пожалуйста начните новую игру")
+        bot.send_message(chat_id=message.from_user.id, text="Произошла ошибка. Пожалуйста начните новую игру")
         return
     data = []
     # Get image URLs
@@ -208,11 +220,11 @@ def ibotShowQuestionType1(bot,message:types.Message, gameId) -> None:
 
     # Get text question
     textQuestion = guess_image.getTextQuestion(gameInfo=gameInfo)
-    bot.send_message(message.from_user.id, text=textQuestion)
+    bot.send_message(chat_id=message.from_user.id, text=textQuestion)
     media_group = []
     for d in data:
         media_group.append(types.InputMediaPhoto(show_caption_above_media=True, media=d['url']))
-    ret = bot.send_media_group(message.from_user.id, media=media_group)
+    ret = bot.send_media_group(chat_id=message.from_user.id, media=media_group)
     mIds = []
     for m in ret:
         mIds.append(m.id)
@@ -225,17 +237,17 @@ def ibotShowQuestionType1(bot,message:types.Message, gameId) -> None:
         responseData = f'{IBOT_TYPE1_ANSWER}{data[i]["iId"]}'
         keys.append(types.InlineKeyboardButton(text=str(i+1), callback_data=responseData))
     keyboard = types.InlineKeyboardMarkup(keyboard=[keys])
-    bot.send_message(message.from_user.id, text='Выберите вариант:', reply_markup=keyboard)
+    bot.send_message(chat_id=message.from_user.id, text='Выберите вариант:', reply_markup=keyboard)
 
 # Send buttons after answer
-def ibotSendAfterAnswer(bot, message) -> None:
+def ibotSendAfterAnswer(bot:telebot.TeleBot, message:types.Message) -> None:
     key1 = types.InlineKeyboardButton(text='Сыграть еще раз', callback_data=CMD_START)
     key2= types.InlineKeyboardButton(text='Выбрать другой тип игры/сложность', callback_data=CMD_SETTINGS)
     keyboard = types.InlineKeyboardMarkup(); # keyboard
     keyboard.add(key1)
     keyboard.add(key2)
     question = 'Выберите дальнейшее действие:'
-    bot.send_message(message.from_user.id, text=question, reply_markup=keyboard)
+    bot.send_message(chat_id=message.from_user.id, text=question, reply_markup=keyboard)
 
 # Modify captures of images with creator, name, year
 def ibotModifyImageCaptures(bot, message, mIds, imageIds) -> None:
@@ -245,7 +257,7 @@ def ibotModifyImageCaptures(bot, message, mIds, imageIds) -> None:
     for i in range(0, len(mIds)):
         ibotModifyImageCapture(bot=bot, message=message, messageId=mIds[i], imageId=imageIds[i])
 
-def ibotModifyImageCapture(bot, message:types.Message, messageId, imageId) -> None:
+def ibotModifyImageCapture(bot:telebot.TeleBot, message:types.Message, messageId, imageId) -> None:
     # Get image info
     imageInfo = Connection.getImageInfoById(id=imageId)
     if (dbFound(result=imageInfo)):
@@ -255,7 +267,7 @@ def ibotModifyImageCapture(bot, message:types.Message, messageId, imageId) -> No
     else:
         log(str=f'{ibotModifyImageCapture.__name__}: Cannot get image info for {imageId}', logLevel=LOG_ERROR)
 
-def ibotShowQuestionType2(bot,message:types.Message, gameId, gameType = 2) -> None:
+def ibotShowQuestionType2(bot:telebot.TeleBot,message:types.Message, gameId, gameType = 2) -> None:
     # Get gameInfo
     gameInfo = Connection.getGameInfoById(id=gameId)
     complexity = gameInfo['complexity']
@@ -266,10 +278,10 @@ def ibotShowQuestionType2(bot,message:types.Message, gameId, gameType = 2) -> No
     imageInfo = Connection.getImageInfoById(id=imageId)
     finished = (gameInfo['result'] != None)
     if (finished):
-        bot.send_message(message.from_user.id, text='Игра уже сыграна. Пожалуйста, начните новую.')
+        bot.send_message(chat_id=message.from_user.id, text='Игра уже сыграна. Пожалуйста, начните новую.')
         return
     # Show image
-    bot.send_photo(message.from_user.id, url)
+    bot.send_photo(chat_id=message.from_user.id, photo=url)
     textQuestion = guess_image.getTextQuestion(gameInfo=gameInfo)
     if (gameType == 2): # Show answer options
         creatorId = imageInfo['creatorId']
@@ -295,11 +307,11 @@ def ibotShowQuestionType2(bot,message:types.Message, gameId, gameType = 2) -> No
             key = types.InlineKeyboardButton(text=creatorName, callback_data=data)
             keyboard.add(key)
 
-        bot.send_message(message.from_user.id, text=textQuestion, reply_markup=keyboard)
+        bot.send_message(chat_id=message.from_user.id, text=textQuestion, reply_markup=keyboard)
     else: # game type == 3
-        bot.send_message(message.from_user.id, text=textQuestion)
+        bot.send_message(chat_id=message.from_user.id, text=textQuestion)
 
-def ibotShowQuestionType3(bot,message, gameId) -> None:
+def ibotShowQuestionType3(bot:telebot.TeleBot,message, gameId) -> None:
     return ibotShowQuestionType2(bot=bot, message=message, gameId=gameId, gameType=3)
 
 
@@ -359,3 +371,90 @@ def ibotCheckAnswerGameType3(userCreatorName:str, correctCreatorName:str) -> boo
         log(str=f'Full answer similarity (similarity={ret}: {userCreatorName} | {correctCreatorName}',logLevel=LOG_DEBUG)
         return True
     return ret
+
+def ibotPhotoHandle(bot:telebot.TeleBot, userName, telegramid, file_info:telegram.File) -> bool:
+    fName = ibotPhotoHandle.__name__
+    log(str=f'{fName}: Photo handling is started')
+    downloaded_file = bot.download_file(file_path=file_info.file_path)
+    # Get image info from DB
+    text = Connection.getCurrentImageInfo(userName=userName)
+    if (text is None):
+        log(str=f'{fName}: Cannot get image info from DB',logLevel=LOG_ERROR)
+        bot.send_message(chat_id=telegramid, text='Не найдена информация о картине')
+        return False
+
+    # Clear image info in DB
+    Connection.clearCurrentImageInfo(userName=userName)
+
+    #text = adjustText(text=text)
+    info = parseCreatorAndImageInfo(text=text)
+    if (info is None):
+        log(str=f'{fName}: Cannot parse creator and image data from "{text}"',logLevel=LOG_ERROR)
+        bot.send_message(chat_id=telegramid, text='Неверный формат информации о картине')
+        return False
+    creatorName = info[0]
+    imageName = info[1]
+    year = info[2]
+    intYear = info[3]
+    # Check if such creator and image is already in DB
+    creatorId = Connection.getCreatorIdByName(creator=creatorName)
+    createPerson = False
+    if (dbFound(result=creatorId)):
+        imageId = Connection.getImageIdByCreatorId(creatorId=creatorId, image=imageName, year=year)
+        if (dbFound(result=imageId)):
+            errorMsg = f'Image does already exist: {creatorName} - {imageName} - {intYear}'
+            bot.send_message(chat_id=telegramid, text=errorMsg)
+            log(str=f'{fName}: {errorMsg}',logLevel=LOG_ERROR)
+            return False
+    else: # New person
+        createPerson = True
+    imageFileName = buildImgLocalFileName(creator=creatorName, name=imageName, year=year)
+    imageFilePath = getBotImagePath() + imageFileName
+    imageFileNameNoExtension = buildImgName(creator=creatorName,name=imageName,year=year)
+    # Check that file doesn't exist
+    if (path.exists(path=imageFilePath)):
+        errorMsg = f'Duplicate file found. Cannot proceed. Image file name: {imageFileNameNoExtension}'
+        log(str=f'{fName}: {errorMsg}',logLevel=LOG_WARNING)
+        bot.send_message(chat_id=telegramid, text=errorMsg)
+        return False
+    # Save image file
+    with open(file=imageFilePath, mode='wb') as new_file:
+        new_file.write(downloaded_file)
+    log(str=f'{fName}: Saved file - {imageFileNameNoExtension}')
+    bot.send_message(chat_id=telegramid, text=f'Картина "{imageFileNameNoExtension}" сохранена')
+
+    orient = getImageOrientation(file=imageFilePath)
+    log(str=f'{fName}: Saved file - {imageFilePath}')
+    # Handle file
+    messageToUser = f'Image file saved: {imageFileNameNoExtension}'
+    # Save to S3
+    imageS3FileName = buildImgS3FileName(creator=creatorName, name=imageName, year=year)
+    ret = uploadImg(imgName=imageS3FileName)
+    if (ret != 0):
+        errorMsg = f'Cannot upload image to S3 {imageFileName}. Returned: {ret}'
+        log(str=f'{fName}:{errorMsg}', logLevel=LOG_ERROR)
+        bot.send_message(chat_id=telegramid, text=f'Cannot upload file to S3: {imageFileNameNoExtension}')
+        return False
+    # Create new person
+    if (createPerson):
+        res = Connection.insertCreator(creator=creatorName)
+        if (not res):
+            errorMsg = f'Cannot create creator {creatorName}'
+            log(str=f'{fName}:{errorMsg}', logLevel=LOG_ERROR)
+            bot.send_message(chat_id=telegramid, text=errorMsg)
+            return False
+        creatorId = Connection.getCreatorIdByName(creator=creatorName)
+        messageToUser = messageToUser + "\n" f'New creator created: {creatorName}'
+    # Create image
+    res = Connection.insertImage(creatorId=creatorId,image=imageName,year=year,intYear=intYear,orientation=orient)
+    if (not res):
+        errorMsg = f'Cannot create image {imageFileNameNoExtension}'
+        log(str=f'{fName}:{errorMsg}', logLevel=LOG_ERROR)
+        bot.send_message(chat_id=telegramid, text=errorMsg)
+        # Delete inserted Creator
+        if (createPerson):
+            Connection.deleteCreator(creatorId=creatorId)
+        return False
+    messageToUser = messageToUser + "\n" + f'New image created {imageFileNameNoExtension}'
+    bot.send_message(chat_id=telegramid, text=messageToUser)
+    return True

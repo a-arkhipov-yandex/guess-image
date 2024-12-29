@@ -6,6 +6,11 @@ from db_lib import *
 
 class TestDB:
 
+    userNameExisting = "Test_User_1111"
+    userIdExisting = None
+    userNameNotExisting = "Test_User_2222"
+    userIdNonexisting = 10000000
+
     def test_DBConnectoin(self) -> None: # Test both test and production connection
         initLog(printToo=True)
         Connection.initConnection(test=False)
@@ -14,6 +19,10 @@ class TestDB:
         Connection.initConnection(test=True)
         isInit2 = Connection.isInitialized()
         assert(isInit1 and isInit2)
+        resCreateUser = Connection.insertUser(userName=TestDB.userNameExisting)
+        TestDB.userIdExisting = Connection.getUserIdByName(name=TestDB.userNameExisting)
+        assert(resCreateUser == True)
+        assert(dbFound(result=TestDB.userIdExisting))
 
     @pytest.mark.parametrize(
         "query, params, expected_result",
@@ -32,7 +41,7 @@ class TestDB:
         ],
     )
     def testExecuteQueryFetchOne(self, query, params, expected_result):
-        assert(Connection.executeQuery(query, params) == expected_result)
+        assert(Connection.executeQuery(query=query, params=params) == expected_result)
 
     @pytest.mark.parametrize(
         "query, params, expected_result",
@@ -51,13 +60,13 @@ class TestDB:
         ],
     )
     def testExecuteQueryFetchAll(self, query, params, expected_result):
-        assert(Connection.executeQuery(query, params, True) == expected_result)
+        assert(Connection.executeQuery(query=query, params=params, all=True) == expected_result)
 
-    def testGetSettingValue(self):
-        ret1 = Connection.getSettingValue(Connection.BASE_URL_KEY)
-        ret2 = Connection.getSettingValue('NonexistingKey')
-        assert(dbFound(ret1))
-        assert(dbNotFound(ret2))
+    def testGetSettingValue(self) -> None:
+        ret1 = Connection.getSettingValue(key=Connection.BASE_URL_KEY)
+        ret2 = Connection.getSettingValue(key='NonexistingKey')
+        assert(dbFound(result=ret1))
+        assert(dbNotFound(result=ret2))
 
     @pytest.mark.parametrize(
         "creator_name, expected_result",
@@ -69,7 +78,7 @@ class TestDB:
         ],
     )
     def testGetCreatorIdByName(self, creator_name, expected_result):
-        assert(Connection.getCreatorIdByName(creator_name) == expected_result)
+        assert(Connection.getCreatorIdByName(creator=creator_name) == expected_result)
 
     @pytest.mark.parametrize(
         "creatorId, image, year, expected_result",
@@ -82,7 +91,7 @@ class TestDB:
         ],
     )
     def testGetImageIdByCreatorId(self, creatorId, image, year, expected_result):
-        assert(Connection.getImageIdByCreatorId(creatorId,image,year) == expected_result)
+        assert(Connection.getImageIdByCreatorId(creatorId=creatorId,image=image,year=year) == expected_result)
 
     @pytest.mark.parametrize(
         "creatorName, image, year, expected_result",
@@ -95,7 +104,7 @@ class TestDB:
         ],
     )
     def testGetImageIdByCreatorName(self, creatorName, image, year, expected_result):
-        assert(Connection.getImageIdByCreatorName(creatorName,image,year) == expected_result)
+        assert(Connection.getImageIdByCreatorName(creator=creatorName,image=image,year=year) == expected_result)
 
     @pytest.mark.parametrize(
         "param, expected_result",
@@ -105,45 +114,45 @@ class TestDB:
         ],
     )
     def testGetCreatorNameById(self, param, expected_result):
-        assert(Connection.getCreatorNameById(param) == expected_result)
+        assert(Connection.getCreatorNameById(creatorId=param) == expected_result)
 
     @pytest.mark.parametrize(
         "userName, expected_result",
         [
-            ('Neo', 1),
-            ('Nonexisting_user', Connection.NOT_FOUND),
-            ('no', Connection.NOT_FOUND), # too short name
-            ('1Neo', Connection.NOT_FOUND), # incorect name format 1
-            ('Neвава', Connection.NOT_FOUND),
+            ('alex_arkhipov', True),
+            ('Nonexisting_user', False),
+            ('no', False), # too short name
+            ('1Neo', False), # incorect name format 1
+            ('Neвава', False),
         ],
     )
     def testGetUserIdByName(self, userName, expected_result):
-        assert(Connection.getUserIdByName(userName) == expected_result)
+        assert(dbFound(result=Connection.getUserIdByName(name=userName)) == expected_result)
 
-    def testInsertDeleteUser(self):
+    def testInsertDeleteUser(self) -> None:
         # test inserting existing user (must return true)
-        resEmptyName = Connection.insertUser('')
-        resDuplicateUserInsert = Connection.insertUser('Neo')
-        resInvalidNameTooShort = Connection.insertUser('Ne')
-        resInvalidNameNonASCII = Connection.insertUser('Neкеаo')
-        resInvalidNameSrartsWithDigit = Connection.insertUser('1Neo')
-        resInvalidNameSpecialChars = Connection.insertUser('Ne$o')
+        resEmptyName = Connection.insertUser(userName='')
+        resDuplicateUserInsert = Connection.insertUser(userName='Neo')
+        resInvalidNameTooShort = Connection.insertUser(userName='Ne')
+        resInvalidNameNonASCII = Connection.insertUser(userName='Neкеаo')
+        resInvalidNameSrartsWithDigit = Connection.insertUser(userName='1Neo')
+        resInvalidNameSpecialChars = Connection.insertUser(userName='Ne$o')
 
         # test inserting new user
-        resNewUserInsert = Connection.insertUser('TestUser')
+        resNewUserInsert = Connection.insertUser(userName='TestUser')
         # check its id
-        id = Connection.getUserIdByName('TestUser')
+        id = Connection.getUserIdByName(name='TestUser')
         resGetUserAfetInsert = True
-        if (dbNotFound(id)):
+        if (dbNotFound(result=id)):
             resGetUserAfetInsert = False
             resGetUserAfterDelete = False
         else:
             # remove it
-            Connection.deleteUser(id)
+            Connection.deleteUser(id=id)
             # check that user is removed
-            id2 = Connection.getUserIdByName('Test_User')
+            id2 = Connection.getUserIdByName(name='Test_User')
             resGetUserAfterDelete = True
-            if (dbFound(id2)):
+            if (dbFound(result=id2)):
                 resGetUserAfterDelete = False
 
         assert(resEmptyName == False)
@@ -164,27 +173,27 @@ class TestDB:
         ],
     )
     def testGetCreatorIdByName(self, crName, expected_result):
-        assert(Connection.getCreatorIdByName(crName) == expected_result)
+        assert(Connection.getCreatorIdByName(creator=crName) == expected_result)
 
-    def testInsertDeleteCreator(self):
+    def testInsertDeleteCreator(self) -> None:
         # test inserting existing creator (must return true)
-        resInsertDuplicateCreator = Connection.insertCreator('Винсент Ван Гог')
+        resInsertDuplicateCreator = Connection.insertCreator(creator='Винсент Ван Гог')
 
         # test inserting new creator
-        resInsertNewCreator = Connection.insertCreator('Test_Creator')
+        resInsertNewCreator = Connection.insertCreator(creator='Test_Creator')
         # check its id
-        id = Connection.getCreatorIdByName('Test_Creator')
+        id = Connection.getCreatorIdByName(creator='Test_Creator')
         resGetCreatorAfterInsert = True
-        if (dbNotFound(id)):
+        if (dbNotFound(result=id)):
             resGetCreatorAfterInsert = False
             resGetCreatorAfterDelete = False
         else:
             # remove it
-            Connection.deleteCreator(id)
+            Connection.deleteCreator(id=id)
             # check that user is removed
-            id2 = Connection.getCreatorIdByName('Test_Creator')
+            id2 = Connection.getCreatorIdByName(creator='Test_Creator')
             resGetCreatorAfterDelete = True
-            if (dbFound(id2)):
+            if (dbFound(result=id2)):
                 resGetCreatorAfterDelete = False
 
         assert(resInsertDuplicateCreator)
@@ -192,29 +201,29 @@ class TestDB:
         assert(resGetCreatorAfterInsert)
         assert(resGetCreatorAfterDelete)
 
-    def testInsertDeleteImage(self):
+    def testInsertDeleteImage(self) -> None:
         # test inserting existing image (must return true)
-        resExistingImage = Connection.insertImage(2, 'Поля тюльпанов', '1883 г', 1883, 1)
+        resExistingImage = Connection.insertImage(creatorId=2, image='Поля тюльпанов', year='1883 г', intYear=1883, orientation=1)
 
         # test inserting new image with non existing creator
-        resNonexistingCreator = Connection.insertImage(100000, 'Поля тюльпанов', '1883 г', 1883, 1)
+        resNonexistingCreator = Connection.insertImage(creatorId=100000, image='Поля тюльпанов', year='1883 г', intYear=1883, orientation=1)
 
         # test inserting CORRECT new image
-        resInsertCorrectImage = Connection.insertImage(2, 'New_Image', '1883 г', 1883, 1)
+        resInsertCorrectImage = Connection.insertImage(creatorId=2, image='New_Image', year='1883 г', intYear=1883, orientation=1)
         # check its id
-        id = Connection.getImageIdByCreatorId(2, 'New_Image', '1883 г')
+        id = Connection.getImageIdByCreatorId(creatorId=2, image='New_Image', year='1883 г')
         resCheckInsertedImage = True
         resDeleteImage = False
-        if (dbNotFound(id)):
+        if (dbNotFound(result=id)):
             resCheckInsertedImage = False
             resDeleteImage = False
         else:
             # remove it
-            Connection.deleteImage(id)
+            Connection.deleteImage(id=id)
             # check that image is removed
-            id2 = Connection.getImageIdByCreatorId(2, 'New_Image', '1883 г')
+            id2 = Connection.getImageIdByCreatorId(creatorId=2, image='New_Image', year='1883 г')
             resDeleteImage = True
-            if (dbFound(id2)):
+            if (dbFound(result=id2)):
                 resDeleteImage = False
 
         assert(resExistingImage)
@@ -223,45 +232,45 @@ class TestDB:
         assert(resCheckInsertedImage)
         assert(resDeleteImage)
 
-    def testGetGameInfoById(self):
-        resInCorrectGame = Connection.getGameInfoById(10000000)
-        assert(dbNotFound(resInCorrectGame))
+    def testGetGameInfoById(self) -> None:
+        resInCorrectGame = Connection.getGameInfoById(id=10000000)
+        assert(dbNotFound(result=resInCorrectGame))
 
-    def testGetRandomCreatorIds(self):
-        res1Id = Connection.getRandomCreatorIds(1) # 1 Id
-        res4Ids = Connection.getRandomCreatorIds(1, 4) # 4 Ids
-        assert(dbFound(res1Id))
-        assert(dbFound(res4Ids))
+    def testGetRandomCreatorIds(self) -> None:
+        res1Id = Connection.getRandomCreatorIds(complexity=1) # 1 Id
+        res4Ids = Connection.getRandomCreatorIds(complexity=1, n=4) # 4 Ids
+        assert(dbFound(result=res1Id))
+        assert(dbFound(result=res4Ids))
 
-    def testGetRandomImageIdsOfCreator(self):
-        res1Id = Connection.getRandomImageIdsOfCreator(2) # 1 Id
-        res4Ids = Connection.getRandomImageIdsOfCreator(2, n=4) # 4 Ids
-        assert(dbFound(res1Id))
-        assert(dbFound(res4Ids))
+    def testGetRandomImageIdsOfCreator(self) -> None:
+        res1Id = Connection.getRandomImageIdsOfCreator(creatorId=2) # 1 Id
+        res4Ids = Connection.getRandomImageIdsOfCreator(creatorId=2, n=4) # 4 Ids
+        assert(dbFound(result=res1Id))
+        assert(dbFound(result=res4Ids))
 
-    def testGetRandomImageIdsOfOtherCreators(self):
+    def testGetRandomImageIdsOfOtherCreators(self) -> None:
         yearRange = (1500, 1600)
         res1Id = Connection.getRandomImageIdsOfOtherCreators(creatorId=2, complexity=1, n=1, range=yearRange) # 1 Id
         res4Ids = Connection.getRandomImageIdsOfOtherCreators(creatorId=2, complexity=1, n=4) # 4 Ids
         resRange = False
-        if (dbFound(res1Id)):
+        if (dbFound(result=res1Id)):
             game1Id = res1Id[0]
-            gameInfo = Connection.getImageInfoById(game1Id)
+            gameInfo = Connection.getImageInfoById(id=game1Id)
             resRange = (gameInfo['intYear'] > yearRange[0] and gameInfo['intYear'] < yearRange[1])
         
-        assert(dbFound(res1Id))
-        assert(dbFound(res4Ids))
+        assert(dbFound(result=res1Id))
+        assert(dbFound(result=res4Ids))
         assert(resRange)
 
-    def testGetNCreators(self):
+    def testGetNCreators(self) -> None:
         yearRange = (1800, 1900)
         res2Ids = Connection.getNCreators(n=2, exclude=2, complexity=1, range=(None,None))
         res4Ids = Connection.getNCreators(n=8, exclude=2, complexity=1, range=yearRange)
         resRange = True
-        if (dbFound(res4Ids)):
+        if (dbFound(result=res4Ids)):
             creators = res4Ids
             for c in creators:
-                creatorInfo = Connection.getCreatorInfoById(c['creatorId'])
+                creatorInfo = Connection.getCreatorInfoById(creatorId=c['creatorId'])
                 birth = creatorInfo['birth']
                 if (birth):
                     if (birth < yearRange[0]):
@@ -273,45 +282,45 @@ class TestDB:
                         resRange = False
                         break
 
-        assert(dbFound(res2Ids) and (len(res2Ids) == 2))
-        assert(dbFound(res4Ids) and len(res4Ids) == 8)
+        assert(dbFound(result=res2Ids) and (len(res2Ids) == 2))
+        assert(dbFound(result=res4Ids) and len(res4Ids) == 8)
         assert(resRange)
 
-    def testInsertDeleteGame(self):
+    def testInsertDeleteGame(self) -> None:
         # test inserting new game
-        resInsertNewGame = Connection.insertGame(1,1,1,1,1)
+        userId = TestDB.userIdExisting
+        resInsertNewGame = Connection.insertGame(user_id=userId,game_type=1,correct_answer=1,question=1,complexity=1)
+        assert(resInsertNewGame)
         resGetGameAfterInsert = False
         resGetGameAfterDelete = False
         # check its id
-        if (resInsertNewGame):
-            id = Connection.getGameInfoById(resInsertNewGame)
-            resGetGameAfterInsert = True
-            if (dbNotFound(id)):
-                resGetGameAfterInsert = False
-            else:
-                # remove it
-                Connection.deleteGame(id['id'])
-                # check that game is removed
-                id2 = Connection.getGameInfoById(id)
-                resGetGameAfterDelete = True
-                if (dbFound(id2)):
-                    resGetGameAfterDelete = False
+        id = Connection.getGameInfoById(id=resInsertNewGame)
+        resGetGameAfterInsert = True
+        if (dbNotFound(result=id)):
+            resGetGameAfterInsert = False
+        else:
+            # remove it
+            Connection.deleteGame(id=id['id'])
+            # check that game is removed
+            id2 = Connection.getGameInfoById(id=id)
+            resGetGameAfterDelete = True
+            if (dbFound(result=id2)):
+                resGetGameAfterDelete = False
 
-        assert(resInsertNewGame)
         assert(resGetGameAfterInsert)
         assert(resGetGameAfterDelete)
 
-    def testGetImageInfoById(self):
-        resCorrectImage = Connection.getImageInfoById(1)
-        resInCorrectImage = Connection.getImageInfoById(1000000)
+    def testGetImageInfoById(self) -> None:
+        resCorrectImage = Connection.getImageInfoById(id=1)
+        resInCorrectImage = Connection.getImageInfoById(id=1000000)
         assert(resCorrectImage.get('creatorId'))
-        assert(dbNotFound(resInCorrectImage))
+        assert(dbNotFound(result=resInCorrectImage))
 
-    def testGetImageUrlById(self):
-        resCorrectImage = Connection.getImageUrlById(1)
-        resInCorrectImage = Connection.getImageUrlById(1000000)
-        assert(dbFound(resCorrectImage))
-        assert(dbNotFound(resInCorrectImage))
+    def testGetImageUrlById(self) -> None:
+        resCorrectImage = Connection.getImageUrlById(id=1)
+        resInCorrectImage = Connection.getImageUrlById(id=1000000)
+        assert(dbFound(result=resCorrectImage))
+        assert(dbNotFound(result=resInCorrectImage))
 
     @pytest.mark.parametrize(
         "param, expected_result",
@@ -331,7 +340,7 @@ class TestDB:
         ],
     )
     def testDbLibCheckAnswer(self, param, expected_result):
-        assert(dbLibCheckAnswer(param) == expected_result)
+        assert(dbLibCheckAnswer(answer=param) == expected_result)
 
     @pytest.mark.parametrize(
         "param, expected_result",
@@ -351,7 +360,7 @@ class TestDB:
         ],
     )
     def testDbLibCheckUserId(self, param, expected_result):
-        assert(dbLibCheckUserId(param) == expected_result)
+        assert(dbLibCheckUserId(user_id=param) == expected_result)
 
     @pytest.mark.parametrize(
         "param, expected_result",
@@ -371,7 +380,7 @@ class TestDB:
         ],
     )
     def testDbLibCheckGameId(self, param, expected_result):
-        assert(dbLibCheckGameId(param) == expected_result)
+        assert(dbLibCheckGameId(game_id=param) == expected_result)
 
     @pytest.mark.parametrize(
         "param, expected_result",
@@ -393,7 +402,7 @@ class TestDB:
         ],
     )
     def testDbLibCheckGameType(self, param, expected_result):
-        assert(dbLibCheckGameType(param) == expected_result)
+        assert(dbLibCheckGameType(game_type=param) == expected_result)
 
     @pytest.mark.parametrize(
         "param, expected_result",
@@ -415,7 +424,7 @@ class TestDB:
         ],
     )
     def testDbLibCheckOrientation(self, param, expected_result):
-        assert(dbLibCheckOrientation(param) == expected_result)
+        assert(dbLibCheckOrientation(orientation=param) == expected_result)
 
     @pytest.mark.parametrize(
         "param, expected_result",
@@ -429,7 +438,7 @@ class TestDB:
         ],
     )
     def testDbNotFound(self, param, expected_result):
-        assert(dbNotFound(param) == expected_result)
+        assert(dbNotFound(result=param) == expected_result)
 
     @pytest.mark.parametrize(
         "param, expected_result",
@@ -443,115 +452,117 @@ class TestDB:
         ],
     )
     def testDbFound(self, param, expected_result):
-        assert(dbFound(param) == expected_result)
+        assert(dbFound(result=param) == expected_result)
 
-    def testGetGameTypesFromDb(self):
+    def testGetGameTypesFromDb(self) -> None:
         resCorrectImage = Connection.getGameTypesFromDb()
         assert(len(resCorrectImage) == 3)
 
-    def testGetGameTypesFromCache(self):
+    def testGetGameTypesFromCache(self) -> None:
         resCorrectImage = Connection.getGameTypes()
         assert(len(resCorrectImage) == 3)
 
-    def testFinishGame(self):
-        resNonexistingGame = Connection.finishGame(2000000, 1)
+    def testFinishGame(self) -> None:
+        resNonexistingGame = Connection.finishGame(gameId=2000000, answer=1)
         resFinishedGame = True
         # Create game type 1
         resGameType1 = False
-        ret = Connection.insertGame(1,1,1,1,1)
+        ret = Connection.insertGame(user_id=TestDB.userIdExisting,game_type=1,correct_answer=1,question=1,complexity=1)
+        assert(ret != None)
         if (ret != None):
             # Finish game
-            ret2 = Connection.finishGame(ret, 1)
+            ret2 = Connection.finishGame(gameId=ret, answer=1)
             if (ret2):
                 # Check if game is finished
-                resGameType1 = Connection.checkGameIsFinished(ret)
-                resFinishedGame = Connection.finishGame(ret, 1)
+                resGameType1 = Connection.checkGameIsFinished(gameId=ret)
+                resFinishedGame = Connection.finishGame(gameId=ret, answer=1)
             # Delete game
-            Connection.deleteGame(ret)
+            Connection.deleteGame(id=ret)
 
         # Create game type 2
         resGameType2 = False
-        ret = Connection.insertGame(1,2,1,1,1)
+        ret = Connection.insertGame(user_id=TestDB.userIdExisting,game_type=2,correct_answer=1,question=1,complexity=1)
         if (ret != None):
             # Finish game
-            ret2 = Connection.finishGame(ret, 2)
+            ret2 = Connection.finishGame(gameId=ret, answer=2)
             if (ret2):
                 # Check if game is finished
-                resGameType2 = Connection.checkGameIsFinished(ret)
+                resGameType2 = Connection.checkGameIsFinished(gameId=ret)
             # Delete game
-            Connection.deleteGame(ret)
+            Connection.deleteGame(id=ret)
 
         assert(resNonexistingGame == False)
         assert(resFinishedGame == False)
         assert(resGameType1)
         assert(resGameType2)
 
-    def testGetGamesListAllFinishedUnfinished(self):
+    def testGetGamesListAllFinishedUnfinished(self) -> None:
         resUnfinishedGamesList = False
         resFinishedGamesList = False
         resAllGamesList = False
-        userId = 1
+        userId = TestDB.userIdExisting
         # Generate new game and get id
-        gameId = Connection.insertGame(userId,1,1,1,1)
+        gameId = Connection.insertGame(user_id=userId,game_type=1,correct_answer=1,question=1,complexity=1)
         if (gameId != None):
             # Get unfinished list
-            unfinishedList = Connection.getUnfinishedGamesList(userId)
+            unfinishedList = Connection.getUnfinishedGamesList(userId=userId)
             # Check that id is in the list
             for game in unfinishedList:
                 if (game['id'] == gameId):
                     resUnfinishedGamesList = True
                     break
             # Get all list
-            allList = Connection.getAllGamesList(userId)
+            allList = Connection.getAllGamesList(userId=userId)
             # Check that id is in the list
             for game in allList:
                 if (game['id'] == gameId):
                     resAllGamesList = True
                     break
             # Finish game
-            ret2 = Connection.finishGame(gameId, 5)
+            ret2 = Connection.finishGame(gameId=gameId, answer=5)
             if (ret2):
                 # Get finished list
-                finishedList = Connection.getFinishedGamesList(userId)
+                finishedList = Connection.getFinishedGamesList(userId=userId)
                 # Check that id is in the list
                 for game in finishedList:
                     if (game['id'] == gameId):
                         resFinishedGamesList = True
                         break
             # Delete game
-            Connection.deleteGame(gameId)
+            Connection.deleteGame(id=gameId)
 
         assert(resUnfinishedGamesList)
         assert(resFinishedGamesList)
         assert(resAllGamesList)
 
-    def testCurrentGame(self):
-        userId1 = 1
-        userName1 = 'Neo'
+    def testCurrentGame(self) -> None:
+        userId1 = TestDB.userIdExisting
+        userName1 = TestDB.userNameExisting
         userName2 = 'TestCurrentGameUser'
         # Create user
-        Connection.insertUser(userName2)
-        userId2 = Connection.getUserIdByName(userName2)
+        Connection.insertUser(userName=userName2)
+        userId2 = Connection.getUserIdByName(name=userName2)
         # Generate new game and get id
-        gameUnfinishedId = Connection.insertGame(userId1,1,1,1,1)
+        gameUnfinishedId = Connection.insertGame(user_id=userId1,game_type=1,correct_answer=1,question=1,complexity=1)
+        assert(gameUnfinishedId != None)
         # Generate new game and get id
-        gameFinishedId = Connection.insertGame(userId1,1,1,1,1)
-        Connection.finishGame(gameFinishedId, 1)
-        resSetCurrentGameWrongUser = Connection.setCurrentGame(userName2, gameUnfinishedId)
-        resSetCurrentGameNonexistingUser = Connection.setCurrentGame('NonexistingUser',gameUnfinishedId)
-        resSetCurrentGameNonexistingGame = Connection.setCurrentGame(userName1, 100000000)
-        resSetCurrentGameUnfinishedGame = Connection.setCurrentGame(userName1, gameUnfinishedId)
-        gameUnfinishedId2 = Connection.getCurrentGame(userName1)
-        resClearCurrentGame = Connection.clearCurrentGame(userName1)
-        gameUnfinishedId3 = Connection.getCurrentGame(userName1)
-        resSetCurrentGameFinishedGame = Connection.setCurrentGame(userName1, gameFinishedId)
-        gameFinishedId2 = Connection.getCurrentGame(userName1)
+        gameFinishedId = Connection.insertGame(user_id=userId1,game_type=1,correct_answer=1,question=1,complexity=1)
+        Connection.finishGame(gameId=gameFinishedId, answer=1)
+        resSetCurrentGameWrongUser = Connection.setCurrentGame(userName=userName2, gameId=gameUnfinishedId)
+        resSetCurrentGameNonexistingUser = Connection.setCurrentGame(userName='NonexistingUser',gameId=gameUnfinishedId)
+        resSetCurrentGameNonexistingGame = Connection.setCurrentGame(userName=userName1, gameId=100000000)
+        resSetCurrentGameUnfinishedGame = Connection.setCurrentGame(userName=userName1, gameId=gameUnfinishedId)
+        gameUnfinishedId2 = Connection.getCurrentGame(userName=userName1)
+        resClearCurrentGame = Connection.clearCurrentGame(userName=userName1)
+        gameUnfinishedId3 = Connection.getCurrentGame(userName=userName1)
+        resSetCurrentGameFinishedGame = Connection.setCurrentGame(userName=userName1, gameId=gameFinishedId)
+        gameFinishedId2 = Connection.getCurrentGame(userName=userName1)
 
         # Delete games
-        Connection.deleteGame(gameUnfinishedId)
-        Connection.deleteGame(gameFinishedId)
+        Connection.deleteGame(id=gameUnfinishedId)
+        Connection.deleteGame(id=gameFinishedId)
         # Delete user
-        Connection.deleteUser(userId2)
+        Connection.deleteUser(id=userId2)
 
         assert(resSetCurrentGameWrongUser == False)
         assert(resSetCurrentGameNonexistingUser == False)
@@ -563,24 +574,30 @@ class TestDB:
         assert(resClearCurrentGame == True)
         assert(gameUnfinishedId3 == None)
 
-    def testCurrentGameData(self):
+    def testCurrentGameData(self) -> None:
         userName2 = 'TestCurrentGameUser'
         gameData = "data"
+        imageInfo = "test - test - 1923 г"
         # Create user
-        Connection.insertUser(userName2)
-        userId2 = Connection.getUserIdByName(userName2)
+        Connection.insertUser(userName=userName2)
+        userId2 = Connection.getUserIdByName(name=userName2)
         # Generate new game and get id
-        gameUnfinishedId = Connection.insertGame(userId2,1,1,1,1)
-        resSetCurrentGameDataNonexistingUser = Connection.setCurrentGame('NonexistingUser',gameUnfinishedId)
-        resSetCurrentGameDataCorrect = Connection.setCurrentGameData(userName2, gameData)
-        gameUnfinishedDataCorrect = Connection.getCurrentGameData(userName2)
-        resClearCurrentGame = Connection.clearCurrentGameData(userName2)
-        gameUnfinishedData = Connection.getCurrentGameData(userName2)
+        gameUnfinishedId = Connection.insertGame(user_id=userId2,game_type=1,correct_answer=1,question=1,complexity=1)
+        resSetCurrentGameDataNonexistingUser = Connection.setCurrentGame(userName='NonexistingUser',gameId=gameUnfinishedId)
+        resSetCurrentGameDataCorrect = Connection.setCurrentGameData(userName=userName2, gameData=gameData)
+        gameUnfinishedDataCorrect = Connection.getCurrentGameData(userName=userName2)
+        resClearCurrentGame = Connection.clearCurrentGameData(userName=userName2)
+        gameUnfinishedData = Connection.getCurrentGameData(userName=userName2)
+
+        resSetCurrentImageInfoCorrect = Connection.setCurrentImageInfo(userName=userName2, imageInfo=imageInfo)
+        gameUnfinishedImageInfoCorrect = Connection.getCurrentImageInfo(userName=userName2)
+        resClearCurrentImageInfo = Connection.clearCurrentImageInfo(userName=userName2)
+        gameUnfinishedImageInfo = Connection.getCurrentImageInfo(userName=userName2)
 
         # Delete games
-        Connection.deleteGame(gameUnfinishedId)
+        Connection.deleteGame(id=gameUnfinishedId)
         # Delete user
-        Connection.deleteUser(userId2)
+        Connection.deleteUser(id=userId2)
 
         assert(resSetCurrentGameDataNonexistingUser == False)
         assert(resSetCurrentGameDataCorrect == True)
@@ -588,7 +605,12 @@ class TestDB:
         assert(resClearCurrentGame == True)
         assert(gameUnfinishedData == None)
 
-    def testUserSettings(self):
+        assert(resSetCurrentImageInfoCorrect == True)
+        assert(gameUnfinishedImageInfoCorrect == imageInfo)
+        assert(resClearCurrentImageInfo == True)
+        assert(gameUnfinishedImageInfo == None)
+
+    def testUserSettings(self) -> None:
         userNameCorrect = 'testUserSettings'
         userNameInCorrect = 'TestUserSettingsвава'
         origGameType = Connection.getDefaultGameType()
@@ -596,23 +618,23 @@ class TestDB:
         newGameType = 2
         newGameComplexity = 3
         # Create user
-        Connection.insertUser(userNameCorrect)
-        userId = Connection.getUserIdByName(userNameCorrect)
-        userSettings = Connection.getUserSetting(userNameCorrect)
+        Connection.insertUser(userName=userNameCorrect)
+        userId = Connection.getUserIdByName(name=userNameCorrect)
+        userSettings = Connection.getUserSetting(userName=userNameCorrect)
         resUserSettings = ((userSettings[0] == Connection.getDefaultGameType()) and (userSettings[1] == Connection.getDefaultComplexity()))
-        gameType1 = Connection.getUserGameType(userNameCorrect)
-        gameComplexity1 = Connection.getUserComplexity(userNameCorrect)
-        gameTypeInCorrect = Connection.getUserGameType(userNameInCorrect)
-        gameComplexityInCorrect = Connection.getUserComplexity(userNameInCorrect)
-        resUpdateGameTypeCorrect = Connection.updateUserGameType(userNameCorrect, newGameType)
-        resUpdateGameTypeInCorrect = Connection.updateUserGameType(userNameCorrect, 100)
-        resUpdateGameComplexityCorrect = Connection.updateUserComplexity(userNameCorrect, newGameComplexity)
-        resUpdateGameComplexityInCorrect = Connection.updateUserComplexity(userNameCorrect, 50)
-        gameType2 = Connection.getUserGameType(userNameCorrect)
-        gameComplexity2 = Connection.getUserComplexity(userNameCorrect)
+        gameType1 = Connection.getUserGameType(userName=userNameCorrect)
+        gameComplexity1 = Connection.getUserComplexity(userName=userNameCorrect)
+        gameTypeInCorrect = Connection.getUserGameType(userName=userNameInCorrect)
+        gameComplexityInCorrect = Connection.getUserComplexity(userName=userNameInCorrect)
+        resUpdateGameTypeCorrect = Connection.updateUserGameType(userName=userNameCorrect, gameType=newGameType)
+        resUpdateGameTypeInCorrect = Connection.updateUserGameType(userName=userNameCorrect, gameType=100)
+        resUpdateGameComplexityCorrect = Connection.updateUserComplexity(userName=userNameCorrect, complexity=newGameComplexity)
+        resUpdateGameComplexityInCorrect = Connection.updateUserComplexity(userName=userNameCorrect, complexity=50)
+        gameType2 = Connection.getUserGameType(userName=userNameCorrect)
+        gameComplexity2 = Connection.getUserComplexity(userName=userNameCorrect)
 
         # delete user
-        Connection.deleteUser(userId)
+        Connection.deleteUser(id=userId)
 
         assert(gameType1 == origGameType)
         assert(resUserSettings)
@@ -650,9 +672,11 @@ class TestDB:
         assert(resNonexistingCreator == [])
         assert(resExistingCreator)
 
-    def testCloseConnection(self):
+    def testCloseConnection(self) -> None:
+        resDeleteUser = Connection.deleteUser(id=TestDB.userIdExisting)
         Connection.closeConnection()
         closeLog()
         isInit = Connection.isInitialized()
+        assert(resDeleteUser == True)
         assert(not isInit)
 
