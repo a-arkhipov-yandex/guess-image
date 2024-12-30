@@ -90,8 +90,9 @@ def buildImgLocalFileName(creator, name, year) -> str:
     return url
 
 # Adjust all files on disk
-def adjustAllFilesOnDisk(creators, titles, years) -> None:
+def adjustAllFilesOnDisk(creators, titles, years) -> bool:
     c = 0
+    ret = False
     for i in range(len(creators)):
         creator = creators[i]
         title = titles[i]
@@ -102,6 +103,8 @@ def adjustAllFilesOnDisk(creators, titles, years) -> None:
         filename_new = getImageFullPath(creator=creator, title=title, year=year)
         if creator != creators[i] or title != titles[i]:
             c += 1
+            ret = True
             print(f'Renaming: {filename_old} -> {filename_new}')
             rename(src=filename_old, dst=filename_new)
     print(f'Total files renamed: {c}')
+    return ret

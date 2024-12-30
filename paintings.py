@@ -15,7 +15,8 @@ def main() -> None:
     updateS3 = True
     updateDB = True
     cleanupDB = True
-    updateCSV = False
+    updateCSV = True
+    saveToCSV = True
  
     prodDb = True
     initLog(printToo=True)
@@ -30,7 +31,14 @@ def main() -> None:
     crNum = len(set(creators))
     log(str=f"Total number of creators: {crNum}",logLevel=LOG_DEBUG)
 
-    adjustAllFilesOnDisk(creators=creators, titles=titles, years=years)
+    if adjustAllFilesOnDisk(creators=creators, titles=titles, years=years):
+        # Reread all files from disk after adjustment
+        imgData = getImgs()
+        creators = imgData[0]
+        titles = imgData[1]
+        years = imgData[2]
+        intYears = imgData[3]
+        orientations = imgData[4]
 
     #checkUrls(creators, titles, years)
     if (updateS3 and updateAll):
@@ -48,8 +56,6 @@ def main() -> None:
     if (not Connection.initConnection(test=not prodDb)):
         print('ERROR: Cannot init connection')
         exit()
-
-    # Put your adhoc code here!
 
     if ((updateDB or cleanupDB or updateCSV) and updateAll):
 
@@ -71,6 +77,15 @@ def main() -> None:
             Connection.updateCreatorsFromCSV()
             tDiff = int(time.time() - t)
             log(str=f"updateCreatorsFromCSV: {tDiff} seconds")
+
+    if (saveToCSV):
+        log(str='Saving creators to CSV')
+        t = time.time()
+        Connection.saveCreatorsToCSV()
+        tDiff = int(time.time() - t)
+        log(str=f"saveCreatorsToCSV: {tDiff} seconds")
+
+    # Put your adhoc code here!
 
     Connection.closeConnection()
 

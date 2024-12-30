@@ -11,6 +11,7 @@ EXT = '.jpg'
 BASE_URL = 'https://functions.yandexcloud.net/d4ei6a2doh55olhcagsm/'
 
 CREATORS_FILE_CVS = 'creators.csv'
+CREATORS_FILE_CVS_TO_SAVE = 'creators_to_save.csv'
 ENV_DBHOST = 'DBHOST'
 ENV_DBPORT = 'DBPORT'
 ENV_DBNAME = 'DBNAME'
@@ -126,25 +127,29 @@ def readCreatorsCSV():
         newCreator['id'] = int(id)
         newCreator['name'] = adjustText(text=name)
         newCreator['complexity'] = int(complexity)
-        gender = None
-        if (creator.get('gender')):
-            gender = int(creator.get('gender'))
+        gender = creator.get('gender')
+        if (gender and gender != "None"):
+            gender = int(gender)
+        else:
+            gender = None
         newCreator['gender'] = gender
-        birth = None
-        if (creator.get('birth')):
-            birth = int(creator.get('birth'))
+        birth = creator.get('birth')
+        if (birth and birth != "None"):
+            birth = int(birth)
+        else:
+            birth = None
         newCreator['birth'] = birth
-        death = None
-        if (creator.get('death')):
-            death = int(creator.get('death'))
+        death = creator.get('death')
+        if (death and death != "None"):
+            death = int(death)
+        else:
+            death = None
         newCreator['death'] = death
-        country = None
-        if (creator.get('country')):
-            country = creator.get('country')
+        country = creator.get('country')
+        if (country and country == "None"):
+            country = None
         newCreator['country'] = country
-
         resCreators.append(newCreator)
-        
     return resCreators
 
 def getBaseUrl():
@@ -279,3 +284,20 @@ def buildImgS3FileName(creator, name, year) -> str:
     imageName = buildImgFileName(creator=creator,title=name,year=year)
     url = f'{imageName}'
     return url
+
+def saveToCSV(creators) -> bool:
+    with open(CREATORS_FILE_CVS_TO_SAVE, 'w') as file:
+        # Save header
+        header = f"id,name,gender,birth,death,country,complexity\n"
+        file.write(header)
+        for row in creators:
+            id = row['id']
+            name = row['name']
+            complexity = row['complexity']
+            gender=row['gender']
+            birth = row['birth']
+            death = row['death']
+            country = row['country']
+            toSave = f"{id},{name},{gender},{birth},{death},{country},{complexity}\n"
+            file.write(toSave)
+    return True

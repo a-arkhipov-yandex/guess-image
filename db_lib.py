@@ -1220,7 +1220,7 @@ class Connection:
     #   None - error occured
     #   [[gameInfo1], [gameInfo2], etc...] - list of appropriate games
     def getFinishedGamesList(userId):
-        ret = dbLibCheckUserId(userId)
+        ret = dbLibCheckUserId(user_id=userId)
         if (not ret):
             return None
         query = 'select id,"user","type",correct_answer,question,user_answer,result,created,finished,complexity from games where "user"=%(uId)s and result is not NULL'
@@ -1261,10 +1261,13 @@ class Connection:
             return False
         conn = Connection.getConnection()
         with conn.cursor() as cur:
-            query = 'update creators set name=%(n)s,gender=%(g)s,birth=%(b)s,death=%(d)s,country=%(c)s,complexity=%(com)s where id = %(id)s'
+            query = 'update creators set gender=%(g)s,birth=%(b)s,death=%(d)s,country=%(c)s,complexity=%(com)s where name = %(n)s'
             try:
-                cur.execute(query=query,vars={'id':cId,'g':gender,'b':birth,'d':death,'n':name,'c':country,'com':complexity})
-                log(str=f'{fName}: Updated creator: {cId} - {creator}')
+                cur.execute(query=query,vars={'g':gender,'b':birth,'d':death,'n':name,'c':country,'com':complexity})
+                if (cur.rowcount > 0):
+                    log(str=f'{fName}: Updated creator: {cId} - {creator}')
+                else:
+                    log(str=f'{fName}: Cannot update creator: {cId} - {creator}',logLevel=LOG_ERROR)
                 ret = True
             except (Exception, psycopg2.DatabaseError) as error:
                 log(str=f'{fName}: Failed update creator {creator}: {error}',logLevel=LOG_ERROR)
@@ -1283,6 +1286,15 @@ class Connection:
                 ret = False
                 break
         return ret
+
+    # Save to CSV
+    def saveCreatorsToCSV() -> None:
+        fName = Connection.saveCreatorsToCSV.__name__
+        creators = Connection.getAllCreatorsInfo()
+        if (not creators):
+            log(str=f'{fName}: Cannot get creators info',logLevel=LOG_ERROR)
+            return
+        saveToCSV(creators=creators)
 
     # Get current game for user userName
     # Returns:
@@ -1599,7 +1611,8 @@ class Connection:
                     return True
                 else:
                     return False
-        return False
+        log(str=f'Creator {creator} not found in DB')
+        return True
 
     def startPingTask() -> None:
         Connection.loopFlag = True
